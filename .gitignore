@@ -1,0 +1,10 @@
+# tempfile
+*#
+*~
+
+# tmp file
+scc
+compiler
+*.o
+*.a
+*Store
