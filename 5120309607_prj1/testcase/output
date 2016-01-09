@@ -1,0 +1,92 @@
+TYPE
+ID
+LP
+RP
+LC
+TYPE
+ID
+SEMI
+TYPE
+ID
+SEMI
+FOR
+LP
+ID
+ASSIGN
+INT
+SEMI
+ID
+LT_OP
+ID
+SEMI
+INC_OP
+ID
+RP
+LC
+TYPE
+ID
+SEMI
+RC
+RETURN
+INT
+SEMI
+RC
+
+syntax tree:
+
+PROGRAM: EXTDEFS  ( block_end_at_line:11 children_num:1)
+--EXTDEFS: EXTDEF EXTDEFS  ( block_end_at_line:11 children_num:2)
+----EXTDEF: TYPE FUNC STMTBLOCK  ( block_end_at_line:10 children_num:3)
+------int  ( block_end_at_line:10 children_num:0)
+------FUNC: ID ( PARAS )  ( block_end_at_line:1 children_num:2)
+--------main  ( block_end_at_line:1 children_num:0)
+--------PARAS: null  ( block_end_at_line:1 children_num:0)
+------STMTBLOCK: { DEFS STMTS }  ( block_end_at_line:10 children_num:2)
+--------DEFS: TYPE DECS ; DEFS  ( block_end_at_line:5 children_num:3)
+----------int  ( block_end_at_line:5 children_num:0)
+----------DECS: VAR  ( block_end_at_line:3 children_num:1)
+------------VAR: ID  ( block_end_at_line:3 children_num:1)
+--------------x  ( block_end_at_line:3 children_num:0)
+----------DEFS: TYPE DECS ; DEFS  ( block_end_at_line:5 children_num:3)
+------------int  ( block_end_at_line:5 children_num:0)
+------------DECS: VAR  ( block_end_at_line:4 children_num:1)
+--------------VAR: ID  ( block_end_at_line:4 children_num:1)
+----------------i  ( block_end_at_line:4 children_num:0)
+------------DEFS: null  ( block_end_at_line:5 children_num:0)
+--------STMTS: STMT STMTS  ( block_end_at_line:10 children_num:2)
+----------STMT: for ( EXP ; EXP ; EXP ) STMT  ( block_end_at_line:8 children_num:4)
+------------EXP: EXPS  ( block_end_at_line:5 children_num:1)
+--------------=  ( block_end_at_line:5 children_num:2)
+----------------EXPS: ID ARRS  ( block_end_at_line:5 children_num:2)
+------------------i  ( block_end_at_line:5 children_num:0)
+------------------null  ( block_end_at_line:5 children_num:0)
+----------------0  ( block_end_at_line:5 children_num:0)
+------------EXP: EXPS  ( block_end_at_line:5 children_num:1)
+--------------<  ( block_end_at_line:5 children_num:2)
+----------------EXPS: ID ARRS  ( block_end_at_line:5 children_num:2)
+------------------i  ( block_end_at_line:5 children_num:0)
+------------------null  ( block_end_at_line:5 children_num:0)
+----------------EXPS: ID ARRS  ( block_end_at_line:5 children_num:2)
+------------------x  ( block_end_at_line:5 children_num:0)
+------------------null  ( block_end_at_line:5 children_num:0)
+------------EXP: EXPS  ( block_end_at_line:5 children_num:1)
+--------------EXPS: UNARYOP EXPS   ( block_end_at_line:5 children_num:2)
+----------------++  ( block_end_at_line:5 children_num:0)
+----------------EXPS: ID ARRS  ( block_end_at_line:5 children_num:2)
+------------------i  ( block_end_at_line:5 children_num:0)
+------------------null  ( block_end_at_line:5 children_num:0)
+------------STMT: STMTBLOCK  ( block_end_at_line:8 children_num:1)
+--------------STMTBLOCK: { DEFS STMTS }  ( block_end_at_line:8 children_num:2)
+----------------DEFS: TYPE DECS ; DEFS  ( block_end_at_line:8 children_num:3)
+------------------int  ( block_end_at_line:8 children_num:0)
+------------------DECS: VAR  ( block_end_at_line:7 children_num:1)
+--------------------VAR: ID  ( block_end_at_line:7 children_num:1)
+----------------------temp  ( block_end_at_line:7 children_num:0)
+------------------DEFS: null  ( block_end_at_line:8 children_num:0)
+----------------STMTS: null  ( block_end_at_line:8 children_num:0)
+----------STMTS: STMT STMTS  ( block_end_at_line:10 children_num:2)
+------------STMT: RETURN EXPS ;  ( block_end_at_line:9 children_num:2)
+--------------return  ( block_end_at_line:9 children_num:0)
+--------------0  ( block_end_at_line:9 children_num:0)
+------------STMTS: null  ( block_end_at_line:10 children_num:0)
+----EXTDEFS:null  ( block_end_at_line:11 children_num:0)
