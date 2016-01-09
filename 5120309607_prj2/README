@@ -1,0 +1,50 @@
+5120309607 Dongyu Jia
+________________________________________________
+header.h 
+	common header
+syntax_tree.h
+	syntax tree
+tokens_prj1.l
+	tokenize input code
+smallc_prj1.y
+	construct syntax tree and print result
+________________________________________________
+
+use program as:
+./compiler ./tesecase/test1.txt ./testcase/output
+
+My program will save a list of all the tokens , with one token per line to ./testcase/output
+
+and it will also save grammer tree in ./testcase/output
+ 
+________________________________________________
+
+There is one mistake in smallc grammer.
+
+It does't seperate struct and INT
+so that statement like:
+
+struct a=1;
+
+will be treated as legal.
+by following rules;
+DEF →SPEC DECS SEMI
+DECS →DEC
+DEC → VAR ASSIGNOP INIT
+INIT →EXP
+EXP →INT
+
+
+So a way to solve this issue is to 
+distinguish DEF as:
+for int
+DEF →TYPE DECS SEMI
+
+and for struct
+SDEF →STSPEC SDECS SEMI
+
+
+
+
+
+
