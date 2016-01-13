@@ -25,7 +25,7 @@ int TreeNode::GetIdType(const string &id, string &type) const {
     if(symbolTable.count(id)==0){
         return -1;
     }
-    type=symbolTable[id].type;
+    type=symbolTable.at(id).type;
     return 0;
 }
 
@@ -35,7 +35,7 @@ int TreeNode::GetIdPointer(const string & id, string & MemPtr) const{
         return -1;
     }
     MemPtr.clear();
-    IdInfo tmp = symbolTable[id];
+    IdInfo tmp = symbolTable.at(id);
 
     if(className=="STMTBLOCK" ){
         MemPtr.push_back('%');

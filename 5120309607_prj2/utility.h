@@ -9,15 +9,6 @@
 #define addCode(x) \
 Codes.push_back(code(x));
 
-#define addCodeReg(x, y) \
-Codes.push_back(code(x,y));
-
-#define addCodeCom(x,y) \
-if(EnableCodeGen) \
-Codes.push_back(code(x,y)); \
-else{ \
-err("can't gen code at here, syntax error") \
-}
 
 
 
@@ -32,21 +23,21 @@ public:
     vector<string> regs;
     void print(){
         if(regs.size()==0)
-            printf("tpl");
+            printf(tpl.c_str());
         if(regs.size()==1)
-            printf("tpl",regs[0]);
+            printf(tpl.c_str(),regs[0].c_str());
         if(regs.size()==2)
-            printf("tpl",regs[0],regs[1]);
+            printf(tpl.c_str(),regs[0].c_str(),regs[1].c_str());
         if(regs.size()==3)
-            printf("tpl",regs[0], regs[1],regs[2]);
+            printf(tpl.c_str(),regs[0].c_str(), regs[1].c_str(),regs[2].c_str());
         if(regs.size()==4)
-            printf("tpl",regs[0],regs[1],regs[2],regs[3]);
+            printf(tpl.c_str(),regs[0].c_str(),regs[1].c_str(),regs[2].c_str(),regs[3].c_str());
         if(regs.size()==5)
-            printf("tpl",regs[0],regs[1],regs[2],regs[3], regs[4]);
+            printf(tpl.c_str(),regs[0].c_str(),regs[1].c_str(),regs[2].c_str(),regs[3].c_str(), regs[4].c_str());
         if(regs.size()==6)
-            printf("tpl",regs[0],regs[1],regs[2],regs[3], regs[4], regs[5], regs[6]);
+            printf(tpl.c_str(),regs[0].c_str(),regs[1].c_str(),regs[2].c_str(),regs[3].c_str(), regs[4].c_str(), regs[5].c_str(), regs[6].c_str());
         if(regs.size()==7)
-            printf("tpl",regs[0],regs[1],regs[2],regs[3], regs[4], regs[5], regs[6],regs[7]);
+            printf(tpl.c_str(),regs[0].c_str(),regs[1].c_str(),regs[2].c_str(),regs[3].c_str(), regs[4].c_str(), regs[5].c_str(), regs[6].c_str(),regs[7].c_str());
     }
     code(const string l):tpl(l){};
     code(const string l,const vector<string> re):tpl(l),regs(re){};

@@ -14,24 +14,42 @@ if (rtn!=0) { err(y) }
 if(rtn!=0) { err(y) exit(-1);}
 
 
+struct IdInfo{
+    int lineno;
+    string type;
+    string suffix;
+
+    IdInfo():lineno(0),type(""),suffix(""){}
+};
+
 class TreeNode {
 public:
     int rtn;
     static vector<code> Codes;
 	static bool EnableCodeGen;
     static vector<string> paras;
-    static int insideStmtBlocks=0;
-    static int insideFor=0;
+    static int insideStmtBlocks;
+    static int insideFor;
     static stack<string> labelForContinue;
     static stack<string> labelForBreak;
 
-    static bool insideFunction=false;
-    static bool getPointer=false;
+    static bool insideFunction;
+    static bool getPointer;
 
-    static int arrsize=0;
-    static string arrid="";
+    static int arrsize;
+    static string arrid;
+
+    static void init(){
+        insideStmtBlocks=0;
+        insideFor=0;
+        EnableCodeGen=true;
+        getPointer=false;
+        insideFunction=false;
+        arrsize=0;
+        registerNum=0;
+    }
 private:
-    static int registerNum=0;
+    static int registerNum;
 public:
     static  string allocateRegister(const string prefix="r_"){
         string tmp="%"+prefix+to_string(registerNum++);
@@ -49,7 +67,7 @@ public:
         }
     }
     TreeNode * parent;
-    TreeNode():parent(NULL),rtn(0),EnableCodeGen(true){};
+    TreeNode():parent(NULL),rtn(0){};
 
     virtual string Codegen(){
         for(auto a:children){
@@ -77,13 +95,7 @@ public:// symbolTable
 
 };
 
-struct IdInfo{
-    int lineno;
-    string type;
-    string suffix;
 
-    IdInfo():lineno(0),type(""),suffix(""){}
-};
 
 
 
