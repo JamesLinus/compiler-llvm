@@ -1,32 +1,93 @@
-#include "header.h"
 
+#include "header.h"
+#include "utility.h"
 #ifndef SYNTAX_TREE_H
 #define SYNTAX_TREE_H
 
-typedef struct TreeNode {
+#define err(x) \
+cerr<<"error at line"<<lineCount<<"; content: "<<content<<" #"<<(x)<<endl;
+
+#define CHECK_RTN(y) \
+if (rtn!=0) { err(y) }
+
+#define CHECK_RTN_EXIT(y) \
+if(rtn!=0) { err(y) exit(-1);}
+
+
+class TreeNode {
+public:
+    int rtn;
+    static vector<code> Codes;
+	static bool EnableCodeGen;
+    static vector<string> paras;
+    static bool insideStmtBlocks=false;
+    static bool insideFor=false;
+    static bool insideFunction=false;
+    static bool getPointer=false;
+private:
+    static int registerNum=0;
+public:
+    static  string allocateRegister(const string prefix="r_"){
+        string tmp="%"+prefix+to_string(registerNum++);
+    }
+
     int lineCount;
-    char* content;
+    string content;
+    string className;
+
     int childrenSize ;
-    struct TreeNode** children;
-} TreeNode;
+    vector<TreeNode*> children;
+    ~TreeNode(){
+        for(auto a:children){
+            delete a;
+        }
+    }
+    TreeNode * parent;
+    TreeNode():parent(NULL),rtn(0),EnableCodeGen(true){};
+
+    virtual string Codegen(){
+        for(auto a:children){
+            a->Codegen();
+        }
+    }
+    virtual  int CalShortCut(int & ret){
+        return -1;
+    }
+
+    virtual void CommentGen(){
+        return;
+    }
+    virtual void ErrorGen(){
+        return;
+    }
+
+public:// symbolTable
+    unordered_map<string, IdInfo> symbolTable;
+    int GetIdPointer(const string & id, string & MemPtr) const;
+    int SearchIdPointer(const string & id, string &MemPtr) const;
+
+    int GetIdType(const string & id, string & type) const;
+    int SearchIdType(const string & id, string &type) const;
+
+    int saveIdtoTable(const string id, const string type="i32") ;
+    int saveIdtoTable(const string id, const string type ,string &MemPtr) ;
+    int saveIdtoTable(const string id, const string type, const string suffix, string &MemPtr) ;
+
+};
+
+struct IdInfo{
+    int lineno;
+    string type;
+    string suffix;
+
+    IdInfo():lineno(0),type(""),suffix(""){}
+};
+
+
+
 
 TreeNode * root;
 
-TreeNode* getNodeInstance(int line, char* content, int  childrenSize, ...) {
-    TreeNode* p = (TreeNode*)malloc(sizeof(TreeNode));
-    p->lineCount = line;
-    p->content = strdup(content);
-    p-> childrenSize =  childrenSize;
-    p->children = (TreeNode**)malloc(sizeof(TreeNode*) *  childrenSize);
-    va_list childrenList;
-    va_start(childrenList,  childrenSize);
-    int i;
-    for (i = 0; i < childrenSize; i++) {
-        p->children[i] = va_arg(childrenList, TreeNode*);
-    }
-    va_end(childrenList);
-    return p;
-}
 
 void printTree(TreeNode * t, int level){
 	int i=0;
@@ -38,14 +99,14 @@ void printTree(TreeNode * t, int level){
 	for(;i<level;i++){
 		printf("--");
 	}
-	printf(t->content);
-        printf("  (");
+	printf("%s", t->content.c_str());
+    printf("  (");
 	printf(" block_end_at_line:%d",t->lineCount);
 	printf(" children_num:%d",t->childrenSize);
 	printf(")\n");
 	i=0;
 	for(;i< t->childrenSize;i++){
-		printTree(*(t->children+i),level+1);
+		printTree(t->children[i],level+1);
 	}
 }
 

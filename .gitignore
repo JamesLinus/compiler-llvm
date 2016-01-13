@@ -8,3 +8,4 @@ compiler
 *.o
 *.a
 *Store
+*.err

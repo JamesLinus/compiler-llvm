@@ -42,10 +42,10 @@ extern int yylineno;
 %left  DOT LP LB
 %%
 PROGRAM: EXTDEFS {root = $$ = getNodeInstance(yylineno,"PROGRAM: EXTDEFS",1,$1);}
-;
+;//done
 EXTDEFS: EXTDEF EXTDEFS {$$ = getNodeInstance(yylineno,"EXTDEFS: EXTDEF EXTDEFS",2,$1,$2);}
 | {$$ = getNodeInstance(yylineno, "EXTDEFS:null", 0);}
-;
+;//done
 
 EXTDEF: TYPE EXTVARS SEMI { $$ = getNodeInstance(yylineno, "EXTDEF: TYPE EXTVARS ;", 2, getNodeInstance(yylineno, $1, 0),$2); }
 | STSPEC SEXTVARS SEMI { $$ = getNodeInstance(yylineno, "EXTDEF: STSPEC SEXTVARS ;", 2, $1,$2); }
@@ -56,7 +56,7 @@ EXTDEF: TYPE EXTVARS SEMI { $$ = getNodeInstance(yylineno, "EXTDEF: TYPE EXTVARS
 SEXTVARS: ID { $$ = getNodeInstance(yylineno, "SEXTVARS: ID",1,getNodeInstance(yylineno,$1,0)); }
 | ID COMMA SEXTVARS { $$ = getNodeInstance(yylineno, "SEXTVARS: ID , SEXTVARS", 2, getNodeInstance(yylineno, $1, 0),$3); }
 | {$$ = getNodeInstance(yylineno, "SEXTVARS: null", 0);}
-;
+;//jump
 
 EXTVARS: VAR { $$ = getNodeInstance(yylineno, "EXTVARS: VAR", 1, $1); }
 |VAR COMMA EXTVARS { $$ = getNodeInstance(yylineno, "EXTVARS:VAR , EXTVARS", 2, $1,$3); }
@@ -116,7 +116,7 @@ DECS: VAR { $$ = getNodeInstance(yylineno, "DECS: VAR", 1, $1); }
 ;
 
 VAR:ID { $$ = getNodeInstance(yylineno, "VAR: ID", 1,getNodeInstance(yylineno, $1, 0)); }
-|VAR LB INT RB { $$ = getNodeInstance(yylineno, "VAR:VAR [ INT ]", 2, $1,getNodeInstance(yylineno, $3, 0)); }
+|ID LB INT RB { $$ = getNodeInstance(yylineno, "VAR: ID [ INT ]", 2, $1,getNodeInstance(yylineno, $3, 0)); }
 ;
 
 INIT: EXPS { $$ = getNodeInstance(yylineno, "INIT: EXPS", 1, $1); }
@@ -156,7 +156,7 @@ EXPS: EXPS AND_OP EXPS { $$ = getNodeInstance(yylineno, $2, 2, $1,$3); }
 | EXPS GT_OP EXPS { $$ = getNodeInstance(yylineno, $2, 2, $1,$3); }
 | EXPS BIT_XOR_OP EXPS { $$ = getNodeInstance(yylineno, $2, 2, $1,$3); }
 | EXPS BIT_OR_OP EXPS { $$ = getNodeInstance(yylineno, $2, 2, $1,$3); }
-| UNARYOP EXPS %prec UNARY { $$ = getNodeInstance(yylineno, "EXPS: UNARYOP EXPS ", 2, $1,$2); }
+| UNARYOP EXPS %prec UNARY { $$ = getNodeInstance(yylineno, "EXPS: UNARYOP EXPS", 2, $1,$2); }
 | LP EXPS RP { $$ = getNodeInstance(yylineno, "EXPS: ( EXPS )", 1, $2); }
 | ID LP ARGS RP { $$ = getNodeInstance(yylineno, "EXPS: ID ( ARGS )", 2, getNodeInstance(yylineno, $1, 0),$3); }
 | ID ARRS { $$ = getNodeInstance(yylineno, "EXPS: ID ARRS", 2, getNodeInstance(yylineno, $1, 0),$2); }
@@ -164,11 +164,11 @@ EXPS: EXPS AND_OP EXPS { $$ = getNodeInstance(yylineno, $2, 2, $1,$3); }
 | INT { $$ = getNodeInstance(yylineno, $1, 0); }
 ;
 
-ARRS: LB EXP RB ARRS { $$ = getNodeInstance(yylineno, "ARRS: [ EXP ] ARRS", 2, $2,$4); }
-| {$$ = getNodeInstance(yylineno, "null", 0);}
+ARRS: LB EXPS RB  { $$ = getNodeInstance(yylineno, "ARRS: [ EXPS ]", 1, $2); }
+| {$$ = getNodeInstance(yylineno, "ARRS: null", 0);}
 ;
 
-ARGS: EXP COMMA ARGS { $$ = getNodeInstance(yylineno, "ARGS: EXP, ARGS", 2, $1,$3); }
+ARGS: EXPS COMMA ARGS { $$ = getNodeInstance(yylineno, "ARGS: EXPS, ARGS", 2, $1,$3); }
 | EXP { $$ = getNodeInstance(yylineno, "args", 1, $1); }
 ;
 
@@ -191,6 +191,8 @@ void yyerror(char *s)
 	fflush(stdout);
 	fprintf(stderr,"yyerror: %d :%s %s\n",yylineno,s,yytext);
 }
+
+
 int main(int argc, char *argv[])
 {
 	freopen(argv[1], "r", stdin);
