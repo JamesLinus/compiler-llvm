@@ -13,6 +13,9 @@ string PROGRAMTreeNode::Codegen() {
     addCode("\ndeclare i32 @__isoc99_scanf(i8*, ...) #1\n");
     addCode("declare i32 @printf(i8*, ...) #1\n");
 
+    addCode("attributes #0 = { nounwind uwtable \"less-precise-fpmad\"=\"false\"\"no-frame-pointer-elim\"=\"true\" \"no-frame-pointer-elim-non-leaf\" \"no-infs-fp-math\"=\"false\" \"no-nans-fp-math\"=\"false\" \"stack-protector-buffer-size\"=\"8\" \"unsafe-fp-math\"=\"false\" \"use-soft-float\"=\"false\" }")
+
+
     return "NULL";
 }
 
@@ -98,8 +101,90 @@ string EXTVARSTreeNode::Codegen() {
             children[i]->Codegen();
         }
     }
-
+    return "NULL";
 }
+
+string DEFSTreeNode::Codegen() {
+    if(content=="DEFS: TYPE DECS ; DEFS"){
+        children.at(1)->Codegen();
+        children.at(2)->Codegen();
+        return "NULL";
+    }else if(content=="DEFS: STSPEC SDECS ; DEFS"){
+        err("not implemented");
+        exit(-1);
+    }
+    return TreeNode::Codegen();
+}
+
+
+string DECSTreeNode::Codegen() {
+    if(children.size()<=2){ //var//var,extvars
+        TreeNode * t=children[0];
+        if(t->content=="VAR: ID" ){
+            addCode("%s  = alloca i32 , align 4\n");
+            string memPtr;
+            rtn = saveIdtoTable(t->children.at(0)->content,"i32",memPtr);
+            CHECK_RTN("error in saving to table");
+            addReg(memPtr);
+        }else if(t->content=="VAR: ID [ INT ]" ){
+            addCode("%s  = alloca [ "+ t->children.at(1)->content +" x i32] , align 4\n");
+            string memPtr;
+            rtn = saveIdtoTable(t->children.at(0)->content,"[ "+ t->children.at(1)->content +" x i32]",memPtr);
+            CHECK_RTN("error in saving to table");
+            addReg(memPtr);
+        }else{
+            err("Content not valid");
+        }
+        for(int i=1;i<children.size();i++){
+            children[i]->Codegen();
+        }
+    }
+    else if(children.size()<=4){ //var = init
+        TreeNode * t=children[0];
+        TreeNode * r=children[1];
+        if(t->content=="VAR: ID" && r->content=="INIT: EXPS" ){//a=1
+            //EXPS must be INT
+            if(!isdigit(r->children[0]->content.back())){
+                err("not digit in initialize");
+                exit(-1);
+            }
+            string memPtr;
+            rtn = saveIdtoTable(t->children[0]->content,"i32",memPtr);
+            CHECK_RTN("error in saving to table");
+            addCode("%s  = alloca i32 , align 4\n");
+            addReg(memPtr);
+
+            addCode(" store i32 "+   r->children[0]->content  +" , i32* %s, align 4")
+            addReg(memPtr)
+
+
+
+        }else if(t->content=="VAR: ID [ INT ]" && r->content=="INIT: { ARGS }"){//a={0,1}
+
+
+            addCode("%s  = alloca [ "+ t->children[1]->content +" x i32] , align 4\n");
+            string memPtr;
+            rtn = saveIdtoTable(t->children[0]->content,"[ "+ t->children[1]->content +" x i32]",memPtr);
+            CHECK_RTN("error in saving to table");
+            arrsize=atoi(t->children.at(1)->content.c_str());
+            arrid=memPtr;
+            addReg(memPtr);
+
+            children[0]->CodeHelperGen();
+
+        }else{
+            err("Content not valid");
+        }
+
+
+        for(int i=3;i<children.size();i++){
+            children[i]->Codegen();
+        }
+    }
+
+    return "NULL";
+}
+
 //done
 string INITTreeNode::Codegen() {
     cerr<<"init node should not be called!"<<endl;
@@ -117,7 +202,7 @@ string ARGSTreeNode::Codegen() {
         ret = " i32 "+val+" ";
     }
 
-    for(int i=1;i<children.size();i++){
+    for(uint i=1;i<(int)children.size();i++){
         ret.append(",");
         ret.append(children.at(i)->Codegen());
     }
@@ -134,13 +219,32 @@ string FUNCTreeNode::Codegen() {
     return "NULL";
 }
 
+string ARRSTreeNode::Codegen() {
+    err("should not be called")
+    return TreeNode::Codegen();
+}
+
+
+
+
+string UNARYOPTreeNode::Codegen() {
+    err("should not be called")
+    return TreeNode::Codegen();
+}
+
+
+string VARTreeNode::Codegen() {
+    err("should not be called")
+    return TreeNode::Codegen();
+}
+
 string PARASTreeNode::Codegen() {
     string ret;
     if(children.size()>=2){ // int id
         string id= children.at(1)->content;
         ret= " i32 %"+id+" ";
         paras.push_back(id);
-        for(int i=2;i<children.size();i++){
+        for(uint i=2;i<children.size();i++){
             ret.append(",");
             ret.append(children.at(i)->Codegen());
         }
@@ -149,7 +253,7 @@ string PARASTreeNode::Codegen() {
 }
 
 string STMTBLOCKTreeNode::Codegen() {
-    if(!insideStmtBlocks){
+    if(insideStmtBlocks==0){
         addCode("{\n")
     }
     if(paras.size()>0){
@@ -166,7 +270,7 @@ string STMTBLOCKTreeNode::Codegen() {
         paras.clear();
     };
     TreeNode::Codegen();
-    if(!insideStmtBlocks){
+    if(insideStmtBlocks==0){
         addCode("}\n")
     };
     return "NULL";
@@ -177,30 +281,114 @@ string STMTSTreeNode::Codegen() {
 }
 
 string STMTTreeNode::Codegen() {
-    if(content=="STMT: STMTBLOCK"){
-        insideStmtBlocks=true;
-        string ret= TreeNode::Codegen();
-        insideStmtBlocks=false;
+    if(content=="STMT: read ( EXPS )"){
+        string tmp= children.at(0)->Codegen();
+
+        addCode(" %s = call i32 (i8*, ...)* @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %s)")
+        addReg(allocateRegister("tmp_"))
+        addReg(tmp);
+
+    } else if(content=="STMT: write ( EXPS )"){
+        string tmp= children.at(0)->Codegen();
+        addCode("%s = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i32 0, i32 0), i32 %s)")
+        addReg(allocateRegister("tmp_"))
+        addReg(tmp);
+    } else if (content == "STMT: STMTBLOCK") {
+        insideStmtBlocks ++;
+        string ret = TreeNode::Codegen();
+        insideStmtBlocks --;
         return ret;
-    }else if(content=="STMT: EXP ;"){
+    } else if (content == "STMT: EXP ;") {
         return TreeNode::Codegen();
-    }else if(content=="STMT: RETURN EXPS ;"){
+    } else if (content == "STMT: RETURN EXPS ;") {
         //0: return
         //1: exps
         //string reg=allocateRegister();
-        if(!insideFunction){
+        if (!insideFunction) {
             err("return must call inside function!");
             exit(-1);
         }
-        string reg=children[1]->Codegen();
+        string reg = children[1]->Codegen();
         addCode("ret i32 %s");
         addReg(reg);
-    }else if(content=="ss"){
+    } else if (content == "STMT: if ( EXPS ) STMT" || content == "STMT: if ( EXPS ) STMT else STMT") {
         //unimplemented
+        getPointer = false;
+        string reg = children.at(0)->Codegen();
+        string tmp = allocateRegister();
+        addCode(" %s = icmp ne i32 %s, 0\n")
+        addReg(tmp)
+        addReg(reg)
+        addCode("  br i1 %s, label %s, label %s\n ")
+        addReg(tmp);
+        string labelstart = "label.if.line" + to_string(lineCount) + ".then";
+        string labelend = "label.if.line" + to_string(lineCount) + ".end";
+        addReg(labelstart)
+        addReg(labelend)
+        addCode("% :")
+        addReg(labelstart)
+        children.at(1)->Codegen();
+        addCode("%s :")
+        addReg(labelend)
+        if (children.size() >= 2) {//else has somethingchildren.at(2
+            children.at(2)->Codegen();
+            addCode(";if end here")
+        }
+    } else if (content == "STMT: for ( EXP ; EXP ; EXP ) STMT") {
+        insideFor++;
+        //getPointer=false;
+        children.at(0)->Codegen();
+
+        string forcond="label.for.line"+ to_string(lineCount)+".cond";
+        string forbody="label.for.line"+ to_string(lineCount)+".body";
+        string forend="label.for.line"+ to_string(lineCount)+".end";
+        labelForBreak.push(forend);
+        labelForContinue.push(forcond);
+        addCode("%s :")
+        addReg(forcond)
+
+        getPointer=false;
+        string tmp=children.at(1)->Codegen();
+        addCode("  br i1 %s, label %s, label %s\n")
+        addReg(tmp);
+        addReg(forbody)
+        addReg(forend)
+
+        addCode("%s :")
+        addReg(forbody)
+
+        children.at(3)->Codegen();
+        children.at(2)->Codegen();
+
+        addCode("  br label %s\n")
+        addReg(forcond);
+
+        addCode("% :")
+        addReg(forend)
+
+        insideFor--;
+        labelForContinue.pop();
+        labelForBreak.pop();
+    }else if(content=="STMT: CONT ;"){
+        if(insideFor==0){
+            err("continue must be in for statement");
+            exit(-1);
+        }
+        addCode("br label %s")
+        addReg(labelForContinue.top());
+    }else if(content=="STMT: BREAK ;"){
+        if(insideFor==0){
+            err("break must be in for statement");
+            exit(-1);
+        }
+        addCode("br label %s")
+        addReg(labelForBreak.top());
+    }else{
+        err("not valid syntax");
+        exit(-1);
     }
+    return "NULL";
 }
-
-
 
 string EXPTreeNode::Codegen() {
     return TreeNode::Codegen();
@@ -426,4 +614,50 @@ string EXPSTreeNode::Codegen() {
         }
     }
     getPointer=thisNodeGetPointer;
+    return "NULL";
+}
+
+void ARGSTreeNode::CodeHelperGen() {
+
+    getPointer=false;
+    string val= children.at(0)->Codegen();
+    if(isdigit(val.at(0)) || val.at(0)=='-' ){ // const
+        for(int i=0;i<arrsize;i++){
+            string ptr=allocateRegister("ptr_");
+            addCode("%s =  getelementptr inbounds ["+to_string(arrsize)+" x i32]* %s, i32 0, i32 "+to_string(i)+"\n")
+            addReg(ptr)
+            addReg(arrid)
+            addCode("  store i32 %s, i32* %s, align 4\n")
+            addReg(val)
+            addReg(ptr)
+        }
+    }else{
+        err(" register must be i32, not checking.");
+        exit(-1);
+    }
+
+    for(uint i=1;i<children.size();i++){
+        children.at(i)->CodeHelperGen();
+    }
+    return ;
+}
+
+string SDECSTreeNode::Codegen() {
+    err("not implemented")
+    return TreeNode::Codegen();
+}
+
+string SDEFSTreeNode::Codegen() {
+    err("not implemented")
+    return TreeNode::Codegen();
+}
+
+string STSPECTreeNode::Codegen() {
+    err("not implemented")
+    return TreeNode::Codegen();
+}
+
+string SEXTVARSTreeNode::Codegen() {
+    err("not implemented")
+    return TreeNode::Codegen();
 }

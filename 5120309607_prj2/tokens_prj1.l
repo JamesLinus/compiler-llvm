@@ -53,6 +53,8 @@ void yyerror(char *);
 ">=" {load printReturn(GE_OP)}
 "==" {load printReturn(EQ_OP)}
 "!=" {load printReturn(NE_OP)}
+"read" {load  printReturn(READ)}
+"write" {load printReturn(WRITE)}
 ">>=" {load printReturn(RIGHT_ASSIGN)}
 "<<=" {load printReturn(LEFT_ASSIGN)}
 "int" {load printReturn(TYPE)}

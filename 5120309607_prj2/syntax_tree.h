@@ -20,10 +20,16 @@ public:
     static vector<code> Codes;
 	static bool EnableCodeGen;
     static vector<string> paras;
-    static bool insideStmtBlocks=false;
-    static bool insideFor=false;
+    static int insideStmtBlocks=0;
+    static int insideFor=0;
+    static stack<string> labelForContinue;
+    static stack<string> labelForBreak;
+
     static bool insideFunction=false;
     static bool getPointer=false;
+
+    static int arrsize=0;
+    static string arrid="";
 private:
     static int registerNum=0;
 public:
@@ -49,17 +55,13 @@ public:
         for(auto a:children){
             a->Codegen();
         }
-    }
-    virtual  int CalShortCut(int & ret){
-        return -1;
+        return "NULL";
     }
 
-    virtual void CommentGen(){
+    virtual void CodeHelperGen(){
         return;
     }
-    virtual void ErrorGen(){
-        return;
-    }
+
 
 public:// symbolTable
     unordered_map<string, IdInfo> symbolTable;

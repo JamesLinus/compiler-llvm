@@ -36,7 +36,12 @@ GenNode(INIT);
 GenNode(EXP);
 GenNode(EXPS);
 GenNode(ARRS);
-GenNode(ARGS);
+class ARGSTreeNode: public TreeNode{
+public:
+    virtual void CodeHelperGen() override;
+
+    virtual string Codegen() override;
+};
 GenNode(UNARYOP);
 
 class ConstValue{

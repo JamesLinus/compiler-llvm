@@ -18,7 +18,7 @@ extern int yylineno;
 %token <string> ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN AND_ASSIGN MOD_ASSIGN
 %token <string> XOR_ASSIGN OR_ASSIGN RIGHT_OP LEFT_OP 
 %token <string> AND_OP OR_OP EQ_OP NE_OP RIGHT_ASSIGN LEFT_ASSIGN 
-%token <string> LOG_NOT_OP BIT_NOT_OP
+%token <string> LOG_NOT_OP BIT_NOT_OP READ WRITE
 %token <string> INT ID SEMI COMMA
 %token <string> TYPE LP RP LB RB LC RC STRUCT RETURN
 %token <string> IF ELSE BREAK CONT FOR DOT ASSIGN
@@ -89,11 +89,13 @@ STMTS: STMT STMTS { $$ = getNodeInstance(yylineno, "STMTS: STMT STMTS", 2, $1,$2
 STMT: EXP SEMI { $$ = getNodeInstance(yylineno, "STMT: EXP ;", 1, $1); }
 | STMTBLOCK { $$ = getNodeInstance(yylineno, "STMT: STMTBLOCK", 1, $1); }
 | RETURN EXPS SEMI { $$ = getNodeInstance(yylineno, "STMT: RETURN EXPS ;", 2, getNodeInstance(yylineno, $1, 0),$2); }
-| IF LP EXPS RP STMT %prec IF_NO_ELSE { $$ = getNodeInstance(yylineno, "STMT: if ( EXPS ) STMT ", 2, $3,$5); }
+| IF LP EXPS RP STMT %prec IF_NO_ELSE { $$ = getNodeInstance(yylineno, "STMT: if ( EXPS ) STMT", 2, $3,$5); }
 | IF LP EXPS RP STMT ELSE STMT %prec ELSE_AFTER_IF { $$ = getNodeInstance(yylineno, "STMT: if ( EXPS ) STMT else STMT", 3, $3,$5,$7);}
 | FOR LP EXP SEMI EXP SEMI EXP RP STMT { $$ = getNodeInstance(yylineno, "STMT: for ( EXP ; EXP ; EXP ) STMT", 4, $3,$5,$7,$9); }
 | CONT SEMI { $$ = getNodeInstance(yylineno, "STMT: CONT ;", 1, getNodeInstance(yylineno, $1, 0)); }
 | BREAK SEMI { $$ = getNodeInstance(yylineno, "STMT: BREAK ;", 1, getNodeInstance(yylineno, $1, 0)); }
+| READ LP EXPS RP SEMI{$$ = getNodeInstance(yylineno,"STMT: read ( EXPS )",1, $3);}
+| WRITE LP EXPS RP SEMI{$$ = getNodeInstance(yylineno,"STMT: write ( EXPS )",1, $3);}
 ;
 
 DEFS: TYPE DECS SEMI DEFS { $$ = getNodeInstance(yylineno, "DEFS: TYPE DECS ; DEFS", 3, getNodeInstance(yylineno, $1, 0),$2,$4); }
@@ -110,8 +112,8 @@ SDECS: ID COMMA SDECS { $$ = getNodeInstance(yylineno, "SDECS: ID , SDECS", 2, g
 ;
 
 DECS: VAR { $$ = getNodeInstance(yylineno, "DECS: VAR", 1, $1); }
-| VAR COMMA DECS { $$ = getNodeInstance(yylineno, "DECS: VAR, DECS ", 2, $1,$3); }
-| VAR ASSIGN INIT COMMA DECS { $$ = getNodeInstance(yylineno, "DECS: VAR ASSIGN INIT, DECS ", 4, $1,getNodeInstance(yylineno, $2, 0),$3,$5); }
+| VAR COMMA DECS { $$ = getNodeInstance(yylineno, "DECS: VAR, DECS", 2, $1,$3); }
+| VAR ASSIGN INIT COMMA DECS { $$ = getNodeInstance(yylineno, "DECS: VAR ASSIGN INIT, DECS", 4, $1,getNodeInstance(yylineno, $2, 0),$3,$5); }
 | VAR ASSIGN INIT { $$ = getNodeInstance(yylineno, "DECS: VAR ASSIGN INIT", 3, $1,getNodeInstance(yylineno, $2, 0),$3); }
 ;
 
