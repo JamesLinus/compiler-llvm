@@ -3,6 +3,27 @@
 //
 #include "TreeNode.h"
 
+TreeNode* getNodeInstance(int line, string content, int childrenSize, ...) {
+    string className=content.substr(0,content.find(':'));
+    cerr<<"requesting class "+className<<endl;
+    TreeNode* p = ConstValue::get(className);
+    p->className=className;
+    p->lineCount = line;
+    //cerr<<content<<endl;
+    p->content = content;
+    p->childrenSize =  childrenSize;
+    p->children.resize(childrenSize);
+    va_list childrenList;
+    va_start(childrenList,  childrenSize);
+    int i;
+    for (i = 0; i < childrenSize; i++) {
+        p->children[i] = va_arg(childrenList, TreeNode*);
+        p->children[i]->parent=p;
+    }
+    va_end(childrenList);
+    return p;
+}
+
 
 string PROGRAMTreeNode::Codegen() {
     addCode("@.str = private unnamed_addr constant [3 x i8] c\"%%d\\00\", align 1\n");

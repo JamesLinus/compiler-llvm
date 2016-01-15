@@ -1,8 +1,7 @@
-
-#include "header.h"
-#include "utility.h"
 #ifndef SYNTAX_TREE_H
 #define SYNTAX_TREE_H
+#include "header.h"
+#include "utility.h"
 
 #define err(x) \
 cerr<<"error at line"<<lineCount<<"; content: "<<content<<" #"<<(x)<<endl;
@@ -51,17 +50,13 @@ public:
 private:
     static int registerNum;
 public:
-    static  string allocateRegister(const string prefix="r_"){
-        string tmp="%"+prefix+to_string(registerNum++);
-    }
-
+    static  string allocateRegister(const string prefix="r_");
     int lineCount;
     string content;
     string className;
-
     int childrenSize ;
     vector<TreeNode*> children;
-    ~TreeNode(){
+    virtual ~TreeNode(){
         for(auto a:children){
             delete a;
         }
@@ -97,31 +92,6 @@ public:// symbolTable
 
 
 
-
-
-
-TreeNode * root;
-
-
-void printTree(TreeNode * t, int level){
-	int i=0;
-	if(level==0){
-		printf("\n");
-		printf("syntax tree:\n");
-		printf("\n");
-	}
-	for(;i<level;i++){
-		printf("--");
-	}
-	printf("%s", t->content.c_str());
-    printf("  (");
-	printf(" block_end_at_line:%d",t->lineCount);
-	printf(" children_num:%d",t->childrenSize);
-	printf(")\n");
-	i=0;
-	for(;i< t->childrenSize;i++){
-		printTree(t->children[i],level+1);
-	}
-}
+void printTree(TreeNode * t, int level);
 
 #endif

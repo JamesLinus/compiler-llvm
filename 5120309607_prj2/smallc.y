@@ -2,10 +2,13 @@
 #include "header.h"
 #include "lex.yy.c"
 #include "syntax_tree.h"
+#include "TreeNode.h"
 
 using namespace std;
 void yyerror(char*);
 extern int yylineno;
+
+TreeNode * root;
 
 %}
 

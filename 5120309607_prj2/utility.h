@@ -7,7 +7,7 @@
 #include "header.h"
 
 #define addCode(x) \
-Codes.push_back(code(x));
+TreeNode::Codes.push_back(code(x));
 
 
 

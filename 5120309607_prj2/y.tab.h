@@ -63,43 +63,45 @@ extern int yydebug;
     LEFT_ASSIGN = 273,
     LOG_NOT_OP = 274,
     BIT_NOT_OP = 275,
-    INT = 276,
-    ID = 277,
-    SEMI = 278,
-    COMMA = 279,
-    TYPE = 280,
-    LP = 281,
-    RP = 282,
-    LB = 283,
-    RB = 284,
-    LC = 285,
-    RC = 286,
-    STRUCT = 287,
-    RETURN = 288,
-    IF = 289,
-    ELSE = 290,
-    BREAK = 291,
-    CONT = 292,
-    FOR = 293,
-    DOT = 294,
-    ASSIGN = 295,
-    IF_NO_ELSE = 296,
-    ELSE_AFTER_IF = 297,
-    BIT_OR_OP = 298,
-    BIT_XOR_OP = 299,
-    BIT_AND_OP = 300,
-    GE_OP = 301,
-    LE_OP = 302,
-    GT_OP = 303,
-    LT_OP = 304,
-    PLUS_OP = 305,
-    MINUS_OP = 306,
-    PRODUCT_OP = 307,
-    DIV_OP = 308,
-    MOD_OP = 309,
-    INC_OP = 310,
-    DEC_OP = 311,
-    UNARY = 312
+    READ = 276,
+    WRITE = 277,
+    INT = 278,
+    ID = 279,
+    SEMI = 280,
+    COMMA = 281,
+    TYPE = 282,
+    LP = 283,
+    RP = 284,
+    LB = 285,
+    RB = 286,
+    LC = 287,
+    RC = 288,
+    STRUCT = 289,
+    RETURN = 290,
+    IF = 291,
+    ELSE = 292,
+    BREAK = 293,
+    CONT = 294,
+    FOR = 295,
+    DOT = 296,
+    ASSIGN = 297,
+    IF_NO_ELSE = 298,
+    ELSE_AFTER_IF = 299,
+    BIT_OR_OP = 300,
+    BIT_XOR_OP = 301,
+    BIT_AND_OP = 302,
+    GE_OP = 303,
+    LE_OP = 304,
+    GT_OP = 305,
+    LT_OP = 306,
+    PLUS_OP = 307,
+    MINUS_OP = 308,
+    PRODUCT_OP = 309,
+    DIV_OP = 310,
+    MOD_OP = 311,
+    INC_OP = 312,
+    DEC_OP = 313,
+    UNARY = 314
   };
 #endif
 /* Tokens.  */
@@ -121,55 +123,57 @@ extern int yydebug;
 #define LEFT_ASSIGN 273
 #define LOG_NOT_OP 274
 #define BIT_NOT_OP 275
-#define INT 276
-#define ID 277
-#define SEMI 278
-#define COMMA 279
-#define TYPE 280
-#define LP 281
-#define RP 282
-#define LB 283
-#define RB 284
-#define LC 285
-#define RC 286
-#define STRUCT 287
-#define RETURN 288
-#define IF 289
-#define ELSE 290
-#define BREAK 291
-#define CONT 292
-#define FOR 293
-#define DOT 294
-#define ASSIGN 295
-#define IF_NO_ELSE 296
-#define ELSE_AFTER_IF 297
-#define BIT_OR_OP 298
-#define BIT_XOR_OP 299
-#define BIT_AND_OP 300
-#define GE_OP 301
-#define LE_OP 302
-#define GT_OP 303
-#define LT_OP 304
-#define PLUS_OP 305
-#define MINUS_OP 306
-#define PRODUCT_OP 307
-#define DIV_OP 308
-#define MOD_OP 309
-#define INC_OP 310
-#define DEC_OP 311
-#define UNARY 312
+#define READ 276
+#define WRITE 277
+#define INT 278
+#define ID 279
+#define SEMI 280
+#define COMMA 281
+#define TYPE 282
+#define LP 283
+#define RP 284
+#define LB 285
+#define RB 286
+#define LC 287
+#define RC 288
+#define STRUCT 289
+#define RETURN 290
+#define IF 291
+#define ELSE 292
+#define BREAK 293
+#define CONT 294
+#define FOR 295
+#define DOT 296
+#define ASSIGN 297
+#define IF_NO_ELSE 298
+#define ELSE_AFTER_IF 299
+#define BIT_OR_OP 300
+#define BIT_XOR_OP 301
+#define BIT_AND_OP 302
+#define GE_OP 303
+#define LE_OP 304
+#define GT_OP 305
+#define LT_OP 306
+#define PLUS_OP 307
+#define MINUS_OP 308
+#define PRODUCT_OP 309
+#define DIV_OP 310
+#define MOD_OP 311
+#define INC_OP 312
+#define DEC_OP 313
+#define UNARY 314
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
-#line 12 "smallc_prj1.y" /* yacc.c:1909  */
+#line 15 "smallc.y" /* yacc.c:1909  */
 
     char* string;
     TreeNode* node;
 
-#line 173 "y.tab.h" /* yacc.c:1909  */
+#line 177 "y.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
