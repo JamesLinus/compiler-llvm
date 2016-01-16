@@ -36,12 +36,15 @@ public:
     static bool getPointer;
 
     static int arrsize;
+    static int arrindex;
     static string arrid;
 
     static void init();
 private:
     static int registerNum;
 public:
+
+    string retType;
     static  string allocateRegister(const string prefix="r_");
 
     string getToRoot(){
@@ -55,7 +58,6 @@ public:
 
     int lineCount;
     string content;
-    string type;
     string className;
     int childrenSize ;
     vector<TreeNode*> children;
@@ -65,7 +67,7 @@ public:
         }
     }
     TreeNode * parent;
-    TreeNode():parent(NULL),rtn(0){};
+    TreeNode():parent(NULL),rtn(0),retType("i32"){};
 
     virtual string Codegen(){
         for(auto a:children){
@@ -78,6 +80,12 @@ public:
         return;
     }
 
+    void show(){
+        cerr<<"Content:"<<content<<endl;
+        cerr<<"className:"<<className<<endl;
+        cerr<<"children size:"<<children.size()<<endl;
+    }
+
 
 public:// symbolTable
     unordered_map<string, IdInfo> symbolTable;
@@ -87,9 +95,9 @@ public:// symbolTable
     int GetIdType(const string & id, string & type) const;
     int SearchIdType(const string & id, string &type) const;
 
-    int saveIdtoTable(const string id, const string type="i32") ;
-    int saveIdtoTable(const string id, const string type ,string &MemPtr) ;
-    int saveIdtoTable(const string id, const string type, const string suffix, string &MemPtr) ;
+    int saveIdtoTable( const string & id,  const string & type) ;
+    int saveIdtoTable(const string  & id, const string & type ,string &MemPtr) ;
+    int saveIdtoTable(const string  & id, const  string  & type, const string & suffix, string &MemPtr) ;
 
 };
 

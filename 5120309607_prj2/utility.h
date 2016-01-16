@@ -8,13 +8,19 @@
 
 #define addCode(x) \
 TreeNode::Codes.push_back(code(x)); \
-Codes.back().comment=getToRoot();
-
-
-
+Codes.back().comment=getToRoot(); \
+cerr<<Codes.back().tpl<<endl; \
+cerr<<Codes.back().comment<<endl;
 
 #define addReg(y) \
 Codes.back().regs.push_back(y);
+
+#define addLabel(y) \
+addCode("br label %%%s") \
+addReg(y) \
+addCode("%s:") \
+addReg(y)
+
 
 
 class code{

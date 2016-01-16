@@ -16,6 +16,7 @@ bool TreeNode::getPointer;
 int TreeNode::arrsize;
 string TreeNode::arrid;
 int TreeNode::registerNum;
+int TreeNode::arrindex;
 
 
 void TreeNode::init() {
@@ -25,6 +26,7 @@ void TreeNode::init() {
     getPointer = false;
     insideFunction = false;
     arrsize = 0;
+    arrindex = 0;
     registerNum = 0;
 }
 
@@ -95,16 +97,20 @@ int TreeNode::SearchIdPointer(const string &id, string &MemPtr) const {
     return -1;
 }
 
-int TreeNode::saveIdtoTable(const string id, const string type, string &MemPtr) {
-    return saveIdtoTable(id, type, "", MemPtr);
+int TreeNode::saveIdtoTable(const string & id,  const string & type, string & MemPtr) {
+    cerr<<"first layer:"<<id<<type<<endl;
+    string n;
+    return saveIdtoTable(id, type, n, MemPtr);
 }
 
-int TreeNode::saveIdtoTable(const string id, const string type) {
+int TreeNode::saveIdtoTable(const string & id, const string & type) {
     string tmp;
-    return saveIdtoTable(id, type, "", tmp);
+    string n;
+    return saveIdtoTable(id, type, n, tmp);
 }
 
-int TreeNode::saveIdtoTable(const string id, const string type, const string suffix, string &MemPtr) {
+int TreeNode::saveIdtoTable(const string & id, const string & type, const string & suffix, string &MemPtr) {
+    cerr<<"saving symbol:"<<id<<endl;
     TreeNode *treeNode = (TreeNode *) this;
     while (treeNode && treeNode->className != "STMTBLOCK" && treeNode->className != "PROGRAM") {
         treeNode = treeNode->parent;
