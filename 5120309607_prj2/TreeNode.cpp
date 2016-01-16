@@ -43,12 +43,14 @@ string PROGRAMTreeNode::Codegen() {
 string EXTDEFSTreeNode::Codegen() {//simply recursive
     //1. EXTDEF EXTDEFS
     //2. empty
+    cerr<<"entering extdefs"<<endl;
     return TreeNode::Codegen();
 }
 
 //done
 string EXTDEFTreeNode::Codegen() {
     // simply recursive
+    cerr<<"entering EXTDEF"<<endl;
     if (content == "EXTDEF: TYPE FUNC STMTBLOCK") {
         insideFunction = true;
         string ret = TreeNode::Codegen();
@@ -68,6 +70,7 @@ string EXTVARSTreeNode::Codegen() {
     //var=init
     //var=init, extvars
     // empty
+    cerr<<"entering extvars:"<<content<<endl;
     if (children.size() <= 2) { //var//var,extvars
         TreeNode *t = children[0];
         if (t->content == "VAR: ID") {
@@ -90,32 +93,36 @@ string EXTVARSTreeNode::Codegen() {
         }
     }
     else if (children.size() <= 4) { //var = init
-        TreeNode *t = children[0];
-        TreeNode *r = children[1];
+        const TreeNode *t = children.at(0);
+        const TreeNode *r = children.at(2);
         if (t->content == "VAR: ID" && r->content == "INIT: EXPS") {
             //EXPS must be INT
-            if (!isdigit(r->children[0]->content.back())) {
+            if (!isdigit(r->children.at(0)->content.back())) {
                 err("not digit in initialize");
                 exit(-1);
             }
-            addCode("%s  = common global i32 " + r->children[0]->content + ", align 4\n");
+            addCode("%s  = common global i32 " + r->children.at(0)->content + ", align 4\n");
             string memPtr;
-            rtn = saveIdtoTable(t->children[0]->content, "i32", memPtr);
+            rtn = saveIdtoTable(t->children.at(0)->content, "i32", memPtr);
             CHECK_RTN("error in saving to table");
             addReg(memPtr);
 
         } else if (t->content == "VAR: ID [ INT ]" && r->content == "INIT: { ARGS }") {
             EnableCodeGen = false;
-            string list = r->children[0]->Codegen();
+            string list = r->children.at(0)->Codegen();
             EnableCodeGen = true;
 
-            addCode("%s  = common global [ " + t->children[1]->content + " x i32] [ " + list + " ], align 4\n");
+            addCode("%s  = common global [ " + t->children.at(1)->content + " x i32] [ " + list + " ], align 4\n");
             string memPtr;
-            rtn = saveIdtoTable(t->children[0]->content, "[ " + t->children[1]->content + " x i32]", memPtr);
+            cerr<<"117 @"<<content<<endl;
+            string saveType="[ " + t->children.at(1)->content + " x i32]";
+
+            rtn = saveIdtoTable(t->children.at(0)->content, saveType, memPtr);
             CHECK_RTN("error in saving to table");
             addReg(memPtr);
+            cerr<<"ending @"<<content<<endl;
         } else {
-            err("Content not valid");
+            err("Content not valid #"+t->content+"#"+r->content+"#");
         }
 
 
@@ -162,39 +169,39 @@ string DECSTreeNode::Codegen() {
         }
     }
     else if (children.size() <= 4) { //var = init
-        TreeNode *t = children[0];
-        TreeNode *r = children[1];
+        TreeNode *t = children.at(0);
+        TreeNode *r = children.at(2);
         if (t->content == "VAR: ID" && r->content == "INIT: EXPS") {//a=1
             //EXPS must be INT
-            if (!isdigit(r->children[0]->content.back())) {
+            if (!isdigit(r->children.at(0)->content.back())) {
                 err("not digit in initialize");
                 exit(-1);
             }
             string memPtr;
-            rtn = saveIdtoTable(t->children[0]->content, "i32", memPtr);
+            rtn = saveIdtoTable(t->children.at(0)->content, "i32", memPtr);
             CHECK_RTN("error in saving to table");
             addCode("%s  = alloca i32 , align 4\n");
             addReg(memPtr);
 
-            addCode(" store i32 " + r->children[0]->content + " , i32* %s, align 4")
+            addCode(" store i32 " + r->children.at(0)->content + " , i32* %s, align 4")
             addReg(memPtr)
 
 
         } else if (t->content == "VAR: ID [ INT ]" && r->content == "INIT: { ARGS }") {//a={0,1}
 
 
-            addCode("%s  = alloca [ " + t->children[1]->content + " x i32] , align 4\n");
+            addCode("%s  = alloca [ " + t->children.at(1)->content + " x i32] , align 4\n");
             string memPtr;
-            rtn = saveIdtoTable(t->children[0]->content, "[ " + t->children[1]->content + " x i32]", memPtr);
+            rtn = saveIdtoTable(t->children.at(0)->content, "[ " + t->children.at(1)->content + " x i32]", memPtr);
             CHECK_RTN("error in saving to table");
             arrsize = atoi(t->children.at(1)->content.c_str());
             arrid = memPtr;
             addReg(memPtr);
-
-            children[0]->CodeHelperGen();
+            arrindex=0;
+            r->children.at(0)->CodeHelperGen();
 
         } else {
-            err("Content not valid");
+            err("Content not valid left:" + t->content+ "right"+ r->content);
         }
 
 
@@ -217,10 +224,14 @@ string ARGSTreeNode::Codegen() {
     string ret;
     getPointer = false;
     string val = children.at(0)->Codegen();
+    if(val=="NULL"){
+        return "";
+    }
+    //cerr<<"getting "<<val<<children.at(0)->content<<endl;
     if (isdigit(val.at(0)) || val.at(0) == '-') { // const
         ret = " i32 " + val + " ";
     } else {
-        cerr << " register must be i32, not checking." << endl;
+        cerr << " register must be i32, not checking."<<val<< endl;
         ret = " i32 " + val + " ";
     }
 
@@ -234,8 +245,11 @@ string ARGSTreeNode::Codegen() {
 
 string FUNCTreeNode::Codegen() {
     EnableCodeGen = false;
+    //cerr<<"#############"<<children.at(1)->content<<endl;
     string list = children.at(1)->Codegen();
     EnableCodeGen = true;
+
+    //cerr<<"#############"<<list<<endl;
     addCode("define i32 @%s(" + list + ") #0")
     addReg(children.at(0)->content)
     return "NULL";
@@ -262,7 +276,7 @@ string PARASTreeNode::Codegen() {
     string ret;
     if (children.size() >= 2) { // int id
         string id = children.at(1)->content;
-        ret = " i32 %" + id + " ";
+        ret = " i32 %%" + id + " ";
         paras.push_back(id);
         for (uint i = 2; i < children.size(); i++) {
             ret.append(",");
@@ -283,7 +297,7 @@ string STMTBLOCKTreeNode::Codegen() {
             CHECK_RTN("error in saving id when paras size>0");
             addCode("    %s = alloca i32, align 4\n")
             addReg(reg);
-            addCode("    store i32 %s, i32* %s, align 4\n");
+            addCode("    store i32 %%%s, i32* %s, align 4\n");
             addReg(paras[i])
             addReg(reg);
         }
@@ -339,7 +353,11 @@ string STMTTreeNode::Codegen() {
         getPointer = false;
         string reg = children.at(0)->Codegen();
         string tmp = allocateRegister();
-        addCode(" %s = icmp ne i1 %s, 0\n")
+        if(children.at(0)->retType=="i1") {
+            addCode(" %s = icmp ne i1 %s, 0\n")
+        }else{
+            addCode(" %s = icmp ne i32 %s, 0\n")
+        }
         addReg(tmp)
         addReg(reg)
         addCode("  br i1 %s, label %%%s, label %%%s\n ")
@@ -355,7 +373,8 @@ string STMTTreeNode::Codegen() {
         addReg(labelend)
         addCode("%s:")
         addReg(labelend)
-        if (children.size() >= 2) {//else has somethingchildren.at(2
+        if (children.size() > 2) {//else has somethingchildren.at(2
+            cerr<<"Children size:"<<children.size()<<endl;
             children.at(2)->Codegen();
             addCode(";if end here")
         }
@@ -369,13 +388,22 @@ string STMTTreeNode::Codegen() {
         string forend = "label.for.line" + to_string(lineCount) + ".end";
         labelForBreak.push(forend);
         labelForContinue.push(forcond);
-        addCode("%s:")
-        addReg(forcond)
+        addLabel(forcond)
 
         getPointer = false;
         string tmp = children.at(1)->Codegen();
+        string j;
+        if(children.at(1)->retType!="i1"){//i32
+            j=allocateRegister("tmp_");
+            addCode(" %s = icmp ne i32 %s, 0")
+            addReg(j)
+            addReg(tmp)
+        }else{
+            j=tmp;
+        }
+
         addCode("  br i1 %s, label %%%s, label %%%s\n")
-        addReg(tmp);
+        addReg(j);
         addReg(forbody)
         addReg(forend)
 
@@ -388,7 +416,7 @@ string STMTTreeNode::Codegen() {
         addCode("  br label %%%s\n")
         addReg(forcond);
 
-        addCode("%:")
+        addCode("%s:")
         addReg(forend)
 
         insideFor--;
@@ -416,14 +444,19 @@ string STMTTreeNode::Codegen() {
 }
 
 string EXPTreeNode::Codegen() {
-    return TreeNode::Codegen();
+    if(children.size()==0){
+        return "NULL";
+    }else{
+        return children.at(0)->Codegen();
+    }
 }
 
 string EXPSTreeNode::Codegen() {
-    cerr<<"exps:"<<content<<endl;
+    cerr<<"exps:#"<<content<<"#"<<endl;
     const bool thisNodeGetPointer = getPointer;
     if (isdigit(content.back())) {
         //int
+        cerr<<"ret:"<<content<<endl;
         return content;
     } else if (content == "EXPS: ID ARRS") {
         if (children.at(1)->content == "ARRS: null") {
@@ -501,6 +534,7 @@ string EXPSTreeNode::Codegen() {
             if (children.at(0)->content == "-") {
                 addCode("   %s= sub nsw i32 0, %s\n");
             } else if (children.at(0)->content == "!" || children.at(0)->content == "~") {
+                retType="i1";
                 addCode("   %s = icmp eq i32 %s, 0\n")
             } else if (children.at(0)->content == "+") {
                 addCode("   %s = add nsw i32 %s, 0\n")
@@ -523,7 +557,8 @@ string EXPSTreeNode::Codegen() {
         cerr << "binary case:" << content << endl;
         string op1, op2, res;
         if (content == "=" || content == "+=" || content == "-=" || content == "/=" || content == "*=" ||
-            content == "|=" || content == "&=") {
+            content == "|=" || content == "&=" || content==">>=" || content =="<<=" || content== "^=") {
+            res=allocateRegister("tmp_");
             getPointer = true;
             string ptr1;
             ptr1 = children[0]->Codegen();
@@ -543,6 +578,12 @@ string EXPSTreeNode::Codegen() {
                 addCode("%s= and i32 %s, %s\n")
             } else if (content[0] == '/') {
                 addCode("%s= sdiv i32 %s, %s\n")
+            } else if (content[0]=='>'){ //>>=
+                addCode("%s= ashr i32 %s, %s\n")
+            } else if(content[0]=='<'){  //<<=
+                addCode("%s= lshr i32 %s, %s\n")
+            }else if(content[0]=='^'){   //^=
+                addCode("%s= xor i32 %s, %s\n")
             }
             if (content[0] == '=') {
                 res = op2;
@@ -559,23 +600,23 @@ string EXPSTreeNode::Codegen() {
             } else {
                 return res;
             }
-        } else if (content == ">>=" || content == "<<=" || content == "^=") {
-            err("not implemented");
-            exit(-1);
         } else {
             getPointer = false;
             op1 = children[0]->Codegen();
+            string op1Type=children.at(0)->retType;
             getPointer = false;
             op2 = children[1]->Codegen();
             res = allocateRegister();
+            string op2Type=children.at(1)->retType;
 
             if (content == "&&") {
                 string tmp1 = allocateRegister();
                 string tmp2 = allocateRegister();
-                addCode("  %s = icmp ne i1 %s, 0\n")
+                retType="i1";
+                addCode("  %s = icmp ne "+op1Type+" %s, 0\n")
                 addReg(tmp1)
                 addReg(op1)
-                addCode("  %s = icmp ne i1 %s, 0\n")
+                addCode("  %s = icmp ne " +op2Type+" %s, 0\n")
                 addReg(tmp2)
                 addReg(op2)
                 addCode(" %s = and i1 %s, %s\n")
@@ -584,12 +625,13 @@ string EXPSTreeNode::Codegen() {
                 addReg(tmp2)
                 return res;
             } else if (content == "||") {
+                retType="i1";
                 string tmp1 = allocateRegister();
                 string tmp2 = allocateRegister();
-                addCode("  %s = icmp ne i1 %s, 0\n")
+                addCode("  %s = icmp ne "+op1Type+" %s, 0\n")
                 addReg(tmp1)
                 addReg(op1)
-                addCode("  %s = icmp ne i1 %s, 0\n")
+                addCode("  %s = icmp ne " +op2Type+" %s, 0\n")
                 addReg(tmp2)
                 addReg(op2)
                 addCode(" %s = or i1 %s, %s\n")
@@ -610,8 +652,10 @@ string EXPSTreeNode::Codegen() {
             } else if (content == "%") {
                 addCode("%s= srem i32 %s, %s\n")
             } else if (content == ">") {
+                retType="i1";
                 addCode("%s= icmp sgt i32 %s, %s\n")
             } else if (content == "<") {
+                retType="i1";
                 addCode("%s= icmp slt i32 %s, %s\n")
             } else if (content == "^") {
                 addCode("%s= xor i32 %s, %s\n")
@@ -620,12 +664,16 @@ string EXPSTreeNode::Codegen() {
             } else if (content == "&") {
                 addCode("%s= and i32 %s, %s\n")
             } else if (content == "<=") {
+                retType="i1";
                 addCode("%s= icmp sle i32 %s, %s\n")
             } else if (content == ">=") {
+                retType="i1";
                 addCode("%s= icmp sge i32 %s, %s\n")
             } else if (content == "==") {
+                retType="i1";
                 addCode("%s= icmp eq i32 %s, %s\n")
             } else if (content == "!=") {
+                retType="i1";
                 addCode("%s= icmp ne i32 %s, %s\n")
             } else if (content == "<<") {
                 addCode("%s= lshr i32 %s, %s\n")
@@ -652,20 +700,19 @@ void ARGSTreeNode::CodeHelperGen() {
     getPointer = false;
     string val = children.at(0)->Codegen();
     if (isdigit(val.at(0)) || val.at(0) == '-') { // const
-        for (int i = 0; i < arrsize; i++) {
-            string ptr = allocateRegister("ptr_");
-            addCode("%s =  getelementptr inbounds [" + to_string(arrsize) + " x i32]* %s, i32 0, i32 " + to_string(i) +
-                    "\n")
-            addReg(ptr)
-            addReg(arrid)
-            addCode("  store i32 %s, i32* %s, align 4\n")
-            addReg(val)
-            addReg(ptr)
-        }
+        string ptr = allocateRegister("ptr_");
+        addCode("%s =  getelementptr inbounds [" + to_string(arrsize) + " x i32]* %s, i32 0, i32 " + to_string(arrindex) +
+                "\n")
+        addReg(ptr)
+        addReg(arrid)
+        addCode("  store i32 %s, i32* %s, align 4\n")
+        addReg(val)
+        addReg(ptr)
     } else {
         err(" register must be i32, not checking.");
         exit(-1);
     }
+    arrindex++;
 
     for (uint i = 1; i < children.size(); i++) {
         children.at(i)->CodeHelperGen();
