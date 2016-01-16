@@ -38,21 +38,24 @@ public:
     static int arrsize;
     static string arrid;
 
-    static void init(){
-        insideStmtBlocks=0;
-        insideFor=0;
-        EnableCodeGen=true;
-        getPointer=false;
-        insideFunction=false;
-        arrsize=0;
-        registerNum=0;
-    }
+    static void init();
 private:
     static int registerNum;
 public:
     static  string allocateRegister(const string prefix="r_");
+
+    string getToRoot(){
+        if(parent==NULL){
+            return "#"+content+"#";
+        }
+        return "#"+content+"# ->> "+parent->getToRoot();
+    }
+
+    void CodePrint();
+
     int lineCount;
     string content;
+    string type;
     string className;
     int childrenSize ;
     vector<TreeNode*> children;

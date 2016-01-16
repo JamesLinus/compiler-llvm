@@ -12,6 +12,7 @@ testcase=`find ./testcase -name *.sc`
 for test in ${testcase}
 do
     # echo $test
+    echo "\n\n\n***************************************"
     echo $test 
     target=$(echo "${test}" | sed "s@.sc@_test.ll@" )
     $scc "${test}"  "${target}"

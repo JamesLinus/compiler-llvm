@@ -339,19 +339,21 @@ string STMTTreeNode::Codegen() {
         getPointer = false;
         string reg = children.at(0)->Codegen();
         string tmp = allocateRegister();
-        addCode(" %s = icmp ne i32 %s, 0\n")
+        addCode(" %s = icmp ne i1 %s, 0\n")
         addReg(tmp)
         addReg(reg)
-        addCode("  br i1 %s, label %s, label %s\n ")
+        addCode("  br i1 %s, label %%%s, label %%%s\n ")
         addReg(tmp);
         string labelstart = "label.if.line" + to_string(lineCount) + ".then";
-        string labelend = "label.if.line" + to_string(lineCount) + ".end";
+        string labelend = "label.if.line" + to_string(lineCount) + ".else_end";
         addReg(labelstart)
         addReg(labelend)
-        addCode("% :")
+        addCode("%s:")
         addReg(labelstart)
         children.at(1)->Codegen();
-        addCode("%s :")
+        addCode("br label %%%s")
+        addReg(labelend)
+        addCode("%s:")
         addReg(labelend)
         if (children.size() >= 2) {//else has somethingchildren.at(2
             children.at(2)->Codegen();
@@ -367,26 +369,26 @@ string STMTTreeNode::Codegen() {
         string forend = "label.for.line" + to_string(lineCount) + ".end";
         labelForBreak.push(forend);
         labelForContinue.push(forcond);
-        addCode("%s :")
+        addCode("%s:")
         addReg(forcond)
 
         getPointer = false;
         string tmp = children.at(1)->Codegen();
-        addCode("  br i1 %s, label %s, label %s\n")
+        addCode("  br i1 %s, label %%%s, label %%%s\n")
         addReg(tmp);
         addReg(forbody)
         addReg(forend)
 
-        addCode("%s :")
+        addCode("%s:")
         addReg(forbody)
 
         children.at(3)->Codegen();
         children.at(2)->Codegen();
 
-        addCode("  br label %s\n")
+        addCode("  br label %%%s\n")
         addReg(forcond);
 
-        addCode("% :")
+        addCode("%:")
         addReg(forend)
 
         insideFor--;
@@ -397,14 +399,14 @@ string STMTTreeNode::Codegen() {
             err("continue must be in for statement");
             exit(-1);
         }
-        addCode("br label %s")
+        addCode("br label %%%s")
         addReg(labelForContinue.top());
     } else if (content == "STMT: BREAK ;") {
         if (insideFor == 0) {
             err("break must be in for statement");
             exit(-1);
         }
-        addCode("br label %s")
+        addCode("br label %%%s")
         addReg(labelForBreak.top());
     } else {
         err("not valid syntax");
