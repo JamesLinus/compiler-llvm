@@ -47,31 +47,6 @@ GenNode(UNARYOP);
 
 class ConstValue{
 public:
-    static unordered_set<string> nTer;
-    static void init() {
-        nTer.insert("Program");
-        nTer.insert("EXTDEFS");
-        nTer.insert("EXTDEF");
-        nTer.insert("SEXTVARS");
-        nTer.insert("EXTVARS");
-        nTer.insert("STSPEC");
-        nTer.insert("FUNC");
-        nTer.insert("PARAS");
-        nTer.insert("STMTBLOCK");
-        nTer.insert("STMTS");
-        nTer.insert("STMT");
-        nTer.insert("DEFS");
-        nTer.insert("SDEFS");
-        nTer.insert("SDECS");
-        nTer.insert("DECS");
-        nTer.insert("VAR");
-        nTer.insert("INIT");
-        nTer.insert("EXP");
-        nTer.insert("EXPS");
-        nTer.insert("ARRS");
-        nTer.insert("ARGS");
-        nTer.insert("UNARYOP");
-    }
     static TreeNode * get(const string classname){
         SwitchClass(PROGRAM);
         SwitchClass(EXTDEFS);
@@ -99,7 +74,7 @@ public:
     };
 };
 
-TreeNode* getNodeInstance(int line, string content, int childrenSize, ...);
+TreeNode* getNodeInstance(int line,string type, string content, int childrenSize, ...);
 
 #endif //INC_5120309607_PRJ2_TREENODE_H
 

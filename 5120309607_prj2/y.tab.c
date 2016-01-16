@@ -245,16 +245,30 @@ union YYSTYPE
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 int yyparse (void);
 
 #endif /* !YY_YY_Y_TAB_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
-#line 258 "y.tab.c" /* yacc.c:358  */
+#line 272 "y.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -435,13 +449,15 @@ void free (void *); /* INFRINGES ON USER NAME SPACE */
 
 #if (! defined yyoverflow \
      && (! defined __cplusplus \
-         || (defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
+         || (defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL \
+             && defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
 
 /* A type that is properly aligned for any stack member.  */
 union yyalloc
 {
   yytype_int16 yyss_alloc;
   YYSTYPE yyvs_alloc;
+  YYLTYPE yyls_alloc;
 };
 
 /* The size of the maximum gap between one aligned stack and the next.  */
@@ -450,8 +466,8 @@ union yyalloc
 /* The size of an array large to enough to hold all stacks, each with
    N elements.  */
 # define YYSTACK_BYTES(N) \
-     ((N) * (sizeof (yytype_int16) + sizeof (YYSTYPE)) \
-      + YYSTACK_GAP_MAXIMUM)
+     ((N) * (sizeof (yytype_int16) + sizeof (YYSTYPE) + sizeof (YYLTYPE)) \
+      + 2 * YYSTACK_GAP_MAXIMUM)
 
 # define YYCOPY_NEEDED 1
 
@@ -924,6 +940,32 @@ while (0)
 #define YYERRCODE       256
 
 
+/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
+   If N is 0, then set CURRENT to the empty location which ends
+   the previous symbol: RHS[0] (always defined).  */
+
+#ifndef YYLLOC_DEFAULT
+# define YYLLOC_DEFAULT(Current, Rhs, N)                                \
+    do                                                                  \
+      if (N)                                                            \
+        {                                                               \
+          (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;        \
+          (Current).first_column = YYRHSLOC (Rhs, 1).first_column;      \
+          (Current).last_line    = YYRHSLOC (Rhs, N).last_line;         \
+          (Current).last_column  = YYRHSLOC (Rhs, N).last_column;       \
+        }                                                               \
+      else                                                              \
+        {                                                               \
+          (Current).first_line   = (Current).last_line   =              \
+            YYRHSLOC (Rhs, 0).last_line;                                \
+          (Current).first_column = (Current).last_column =              \
+            YYRHSLOC (Rhs, 0).last_column;                              \
+        }                                                               \
+    while (0)
+#endif
+
+#define YYRHSLOC(Rhs, K) ((Rhs)[K])
+
 
 /* Enable debugging if requested.  */
 #if YYDEBUG
@@ -939,9 +981,48 @@ do {                                            \
     YYFPRINTF Args;                             \
 } while (0)
 
-/* This macro is provided for backward compatibility. */
+
+/* YY_LOCATION_PRINT -- Print the location on the stream.
+   This macro was not mandated originally: define only if we know
+   we won't break user code: when these are the locations we know.  */
+
 #ifndef YY_LOCATION_PRINT
-# define YY_LOCATION_PRINT(File, Loc) ((void) 0)
+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
+
+/* Print *YYLOCP on YYO.  Private, do not rely on its existence. */
+
+YY_ATTRIBUTE_UNUSED
+static unsigned
+yy_location_print_ (FILE *yyo, YYLTYPE const * const yylocp)
+{
+  unsigned res = 0;
+  int end_col = 0 != yylocp->last_column ? yylocp->last_column - 1 : 0;
+  if (0 <= yylocp->first_line)
+    {
+      res += YYFPRINTF (yyo, "%d", yylocp->first_line);
+      if (0 <= yylocp->first_column)
+        res += YYFPRINTF (yyo, ".%d", yylocp->first_column);
+    }
+  if (0 <= yylocp->last_line)
+    {
+      if (yylocp->first_line < yylocp->last_line)
+        {
+          res += YYFPRINTF (yyo, "-%d", yylocp->last_line);
+          if (0 <= end_col)
+            res += YYFPRINTF (yyo, ".%d", end_col);
+        }
+      else if (0 <= end_col && yylocp->first_column < end_col)
+        res += YYFPRINTF (yyo, "-%d", end_col);
+    }
+  return res;
+ }
+
+#  define YY_LOCATION_PRINT(File, Loc)          \
+  yy_location_print_ (File, &(Loc))
+
+# else
+#  define YY_LOCATION_PRINT(File, Loc) ((void) 0)
+# endif
 #endif
 
 
@@ -951,7 +1032,7 @@ do {                                                                      \
     {                                                                     \
       YYFPRINTF (stderr, "%s ", Title);                                   \
       yy_symbol_print (stderr,                                            \
-                  Type, Value); \
+                  Type, Value, Location); \
       YYFPRINTF (stderr, "\n");                                           \
     }                                                                     \
 } while (0)
@@ -962,10 +1043,11 @@ do {                                                                      \
 `----------------------------------------*/
 
 static void
-yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
+yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp)
 {
   FILE *yyo = yyoutput;
   YYUSE (yyo);
+  YYUSE (yylocationp);
   if (!yyvaluep)
     return;
 # ifdef YYPRINT
@@ -981,12 +1063,14 @@ yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvalue
 `--------------------------------*/
 
 static void
-yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
+yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp)
 {
   YYFPRINTF (yyoutput, "%s %s (",
              yytype < YYNTOKENS ? "token" : "nterm", yytname[yytype]);
 
-  yy_symbol_value_print (yyoutput, yytype, yyvaluep);
+  YY_LOCATION_PRINT (yyoutput, *yylocationp);
+  YYFPRINTF (yyoutput, ": ");
+  yy_symbol_value_print (yyoutput, yytype, yyvaluep, yylocationp);
   YYFPRINTF (yyoutput, ")");
 }
 
@@ -1019,7 +1103,7 @@ do {                                                            \
 `------------------------------------------------*/
 
 static void
-yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, int yyrule)
+yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, YYLTYPE *yylsp, int yyrule)
 {
   unsigned long int yylno = yyrline[yyrule];
   int yynrhs = yyr2[yyrule];
@@ -1033,7 +1117,7 @@ yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, int yyrule)
       yy_symbol_print (stderr,
                        yystos[yyssp[yyi + 1 - yynrhs]],
                        &(yyvsp[(yyi + 1) - (yynrhs)])
-                                              );
+                       , &(yylsp[(yyi + 1) - (yynrhs)])                       );
       YYFPRINTF (stderr, "\n");
     }
 }
@@ -1041,7 +1125,7 @@ yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, int yyrule)
 # define YY_REDUCE_PRINT(Rule)          \
 do {                                    \
   if (yydebug)                          \
-    yy_reduce_print (yyssp, yyvsp, Rule); \
+    yy_reduce_print (yyssp, yyvsp, yylsp, Rule); \
 } while (0)
 
 /* Nonzero means print parse trace.  It is left uninitialized so that
@@ -1299,9 +1383,10 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
 `-----------------------------------------------*/
 
 static void
-yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
+yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, YYLTYPE *yylocationp)
 {
   YYUSE (yyvaluep);
+  YYUSE (yylocationp);
   if (!yymsg)
     yymsg = "Deleting";
   YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
@@ -1319,6 +1404,12 @@ int yychar;
 
 /* The semantic value of the lookahead symbol.  */
 YYSTYPE yylval;
+/* Location data for the lookahead symbol.  */
+YYLTYPE yylloc
+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
+  = { 1, 1, 1, 1 }
+# endif
+;
 /* Number of syntax errors so far.  */
 int yynerrs;
 
@@ -1337,6 +1428,7 @@ yyparse (void)
     /* The stacks and their tools:
        'yyss': related to states.
        'yyvs': related to semantic values.
+       'yyls': related to locations.
 
        Refer to the stacks through separate pointers, to allow yyoverflow
        to reallocate them elsewhere.  */
@@ -1351,6 +1443,14 @@ yyparse (void)
     YYSTYPE *yyvs;
     YYSTYPE *yyvsp;
 
+    /* The location stack.  */
+    YYLTYPE yylsa[YYINITDEPTH];
+    YYLTYPE *yyls;
+    YYLTYPE *yylsp;
+
+    /* The locations where the error started and ended.  */
+    YYLTYPE yyerror_range[3];
+
     YYSIZE_T yystacksize;
 
   int yyn;
@@ -1360,6 +1460,7 @@ yyparse (void)
   /* The variables used to return semantic value and location from the
      action routines.  */
   YYSTYPE yyval;
+  YYLTYPE yyloc;
 
 #if YYERROR_VERBOSE
   /* Buffer for error messages, and its allocated size.  */
@@ -1368,7 +1469,7 @@ yyparse (void)
   YYSIZE_T yymsg_alloc = sizeof yymsgbuf;
 #endif
 
-#define YYPOPSTACK(N)   (yyvsp -= (N), yyssp -= (N))
+#define YYPOPSTACK(N)   (yyvsp -= (N), yyssp -= (N), yylsp -= (N))
 
   /* The number of symbols on the RHS of the reduced rule.
      Keep to zero when no symbol should be popped.  */
@@ -1376,6 +1477,7 @@ yyparse (void)
 
   yyssp = yyss = yyssa;
   yyvsp = yyvs = yyvsa;
+  yylsp = yyls = yylsa;
   yystacksize = YYINITDEPTH;
 
   YYDPRINTF ((stderr, "Starting parse\n"));
@@ -1384,6 +1486,7 @@ yyparse (void)
   yyerrstatus = 0;
   yynerrs = 0;
   yychar = YYEMPTY; /* Cause a token to be read.  */
+  yylsp[0] = yylloc;
   goto yysetstate;
 
 /*------------------------------------------------------------.
@@ -1409,6 +1512,7 @@ yyparse (void)
            memory.  */
         YYSTYPE *yyvs1 = yyvs;
         yytype_int16 *yyss1 = yyss;
+        YYLTYPE *yyls1 = yyls;
 
         /* Each stack pointer address is followed by the size of the
            data in use in that stack, in bytes.  This used to be a
@@ -1417,8 +1521,10 @@ yyparse (void)
         yyoverflow (YY_("memory exhausted"),
                     &yyss1, yysize * sizeof (*yyssp),
                     &yyvs1, yysize * sizeof (*yyvsp),
+                    &yyls1, yysize * sizeof (*yylsp),
                     &yystacksize);
 
+        yyls = yyls1;
         yyss = yyss1;
         yyvs = yyvs1;
       }
@@ -1441,6 +1547,7 @@ yyparse (void)
           goto yyexhaustedlab;
         YYSTACK_RELOCATE (yyss_alloc, yyss);
         YYSTACK_RELOCATE (yyvs_alloc, yyvs);
+        YYSTACK_RELOCATE (yyls_alloc, yyls);
 #  undef YYSTACK_RELOCATE
         if (yyss1 != yyssa)
           YYSTACK_FREE (yyss1);
@@ -1450,6 +1557,7 @@ yyparse (void)
 
       yyssp = yyss + yysize - 1;
       yyvsp = yyvs + yysize - 1;
+      yylsp = yyls + yysize - 1;
 
       YYDPRINTF ((stderr, "Stack size increased to %lu\n",
                   (unsigned long int) yystacksize));
@@ -1527,7 +1635,7 @@ yybackup:
   YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
   YY_IGNORE_MAYBE_UNINITIALIZED_END
-
+  *++yylsp = yylloc;
   goto yynewstate;
 
 
@@ -1558,588 +1666,589 @@ yyreduce:
      GCC warning that YYVAL may be used uninitialized.  */
   yyval = yyvsp[1-yylen];
 
-
+  /* Default location.  */
+  YYLLOC_DEFAULT (yyloc, (yylsp - yylen), yylen);
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
         case 2:
 #line 47 "smallc.y" /* yacc.c:1646  */
-    {root = (yyval.node) = getNodeInstance(yylineno,"PROGRAM: EXTDEFS",1,(yyvsp[0].node));}
-#line 1569 "y.tab.c" /* yacc.c:1646  */
+    {root = (yyval.node) = getNodeInstance((yyloc).first_line,"PROGRAM","PROGRAM: EXTDEFS",1,(yyvsp[0].node));}
+#line 1678 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
 #line 49 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno,"EXTDEFS: EXTDEF EXTDEFS",2,(yyvsp[-1].node),(yyvsp[0].node));}
-#line 1575 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"EXTDEFS","EXTDEFS: EXTDEF EXTDEFS",2,(yyvsp[-1].node),(yyvsp[0].node));}
+#line 1684 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
 #line 50 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "EXTDEFS:null", 0);}
-#line 1581 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"EXTDEFS", "EXTDEFS:null", 0);}
+#line 1690 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
 #line 53 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXTDEF: TYPE EXTVARS ;", 2, getNodeInstance(yylineno, (yyvsp[-2].string), 0),(yyvsp[-1].node)); }
-#line 1587 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXTDEF", "EXTDEF: TYPE EXTVARS ;", 2, getNodeInstance((yyloc).first_line,"TYPE", (yyvsp[-2].string), 0),(yyvsp[-1].node)); }
+#line 1696 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
 #line 54 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXTDEF: STSPEC SEXTVARS ;", 2, (yyvsp[-2].node),(yyvsp[-1].node)); }
-#line 1593 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXTDEF","EXTDEF: STSPEC SEXTVARS ;", 2, (yyvsp[-2].node),(yyvsp[-1].node)); }
+#line 1702 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
 #line 55 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXTDEF: TYPE FUNC STMTBLOCK", 3, getNodeInstance(yylineno, (yyvsp[-2].string), 0),(yyvsp[-1].node),(yyvsp[0].node)); }
-#line 1599 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXTDEF", "EXTDEF: TYPE FUNC STMTBLOCK", 3, getNodeInstance((yyloc).first_line,"TYPE", (yyvsp[-2].string), 0),(yyvsp[-1].node),(yyvsp[0].node)); }
+#line 1708 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
 #line 59 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "SEXTVARS: ID",1,getNodeInstance(yylineno,(yyvsp[0].string),0)); }
-#line 1605 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"SEXTVARS", "SEXTVARS: ID",1,getNodeInstance((yyloc).first_line,"ID",(yyvsp[0].string),0)); }
+#line 1714 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
 #line 60 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "SEXTVARS: ID , SEXTVARS", 2, getNodeInstance(yylineno, (yyvsp[-2].string), 0),(yyvsp[0].node)); }
-#line 1611 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "SEXTVARS", "SEXTVARS: ID , SEXTVARS", 2, getNodeInstance((yyloc).first_line,"ID", (yyvsp[-2].string), 0),(yyvsp[0].node)); }
+#line 1720 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
 #line 61 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "SEXTVARS: null", 0);}
-#line 1617 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"SEXTVARS", "SEXTVARS: null", 0);}
+#line 1726 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 11:
 #line 64 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXTVARS: VAR", 1, (yyvsp[0].node)); }
-#line 1623 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXTVARS", "EXTVARS: VAR", 1, (yyvsp[0].node)); }
+#line 1732 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
 #line 65 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXTVARS:VAR , EXTVARS", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1629 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXTVARS", "EXTVARS:VAR , EXTVARS", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1738 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
 #line 66 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXTVARS:VAR ASSIGN INIT", 3, (yyvsp[-2].node),getNodeInstance(yylineno,(yyvsp[-1].string),0),(yyvsp[0].node)); }
-#line 1635 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXTVARS", "EXTVARS:VAR ASSIGN INIT", 3, (yyvsp[-2].node),getNodeInstance((yyloc).first_line,"ASSIGN",(yyvsp[-1].string),0),(yyvsp[0].node)); }
+#line 1744 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
 #line 67 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXTVARS:VAR ASSIGN INIT , EXTVARS", 4, (yyvsp[-4].node),getNodeInstance(yylineno,(yyvsp[-3].string),0),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1641 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXTVARS", "EXTVARS:VAR ASSIGN INIT , EXTVARS", 4, (yyvsp[-4].node),getNodeInstance((yyloc).first_line,"ASSIGN",(yyvsp[-3].string),0),(yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1750 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
 #line 68 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "EXTVARS:null", 0);}
-#line 1647 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"EXTVARS", "EXTVARS:null", 0);}
+#line 1756 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
 #line 71 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STSPEC: STRUCT ID { SDEFS }", 3, getNodeInstance(yylineno,(yyvsp[-4].string),0),getNodeInstance(yylineno, (yyvsp[-3].string), 0),(yyvsp[-1].node)); }
-#line 1653 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STSPEC", "STSPEC: STRUCT ID { SDEFS }", 3, getNodeInstance((yyloc).first_line,"STRUCT",(yyvsp[-4].string),0),getNodeInstance((yyloc).first_line,"ID", (yyvsp[-3].string), 0),(yyvsp[-1].node)); }
+#line 1762 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
 #line 72 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STSPEC: STRUCT { SDEFS }", 2, getNodeInstance(yylineno,(yyvsp[-3].string),0),(yyvsp[-1].node)); }
-#line 1659 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "STSPEC","STSPEC: STRUCT { SDEFS }", 2, getNodeInstance((yyloc).first_line,"STRUCT",(yyvsp[-3].string),0),(yyvsp[-1].node)); }
+#line 1768 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
 #line 73 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STSPEC: STRUCT ID", 2, getNodeInstance(yylineno,(yyvsp[-1].string),0),getNodeInstance(yylineno, (yyvsp[0].string), 0)); }
-#line 1665 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "STSPEC","STSPEC: STRUCT ID", 2, getNodeInstance((yyloc).first_line,"STRUCT",(yyvsp[-1].string),0),getNodeInstance((yyloc).first_line,"ID", (yyvsp[0].string), 0)); }
+#line 1774 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
 #line 76 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "FUNC: ID ( PARAS )", 2, getNodeInstance(yylineno, (yyvsp[-3].string), 0),(yyvsp[-1].node)); }
-#line 1671 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "FUNC","FUNC: ID ( PARAS )", 2, getNodeInstance((yyloc).first_line,"ID" ,(yyvsp[-3].string), 0),(yyvsp[-1].node)); }
+#line 1780 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
 #line 80 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "PARAS: TYPE ID , PARAS", 3, getNodeInstance(yylineno, (yyvsp[-3].string), 0), getNodeInstance(yylineno, (yyvsp[-2].string), 0),(yyvsp[0].node)); }
-#line 1677 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"PARAS", "PARAS: TYPE ID , PARAS", 3, getNodeInstance((yyloc).first_line,"TYPE", (yyvsp[-3].string), 0), getNodeInstance((yyloc).first_line,"ID", (yyvsp[-2].string), 0),(yyvsp[0].node)); }
+#line 1786 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
 #line 81 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "PARAS: TYPE ID", 2, getNodeInstance(yylineno, (yyvsp[-1].string), 0), getNodeInstance(yylineno, (yyvsp[0].string), 0)); }
-#line 1683 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "PARAS","PARAS: TYPE ID", 2, getNodeInstance((yyloc).first_line,"TYPE", (yyvsp[-1].string), 0), getNodeInstance((yyloc).first_line,"ID", (yyvsp[0].string), 0)); }
+#line 1792 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
 #line 82 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "PARAS: null", 0);}
-#line 1689 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "PARAS","PARAS: null", 0);}
+#line 1798 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
 #line 85 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMTBLOCK: { DEFS STMTS }", 2, (yyvsp[-2].node),(yyvsp[-1].node)); }
-#line 1695 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STMTBLOCK", "STMTBLOCK: { DEFS STMTS }", 2, (yyvsp[-2].node),(yyvsp[-1].node)); }
+#line 1804 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
 #line 88 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMTS: STMT STMTS", 2, (yyvsp[-1].node),(yyvsp[0].node)); }
-#line 1701 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "STMTS","STMTS: STMT STMTS", 2, (yyvsp[-1].node),(yyvsp[0].node)); }
+#line 1810 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
 #line 89 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "STMTS: null", 0);}
-#line 1707 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"STMTS", "STMTS: null", 0);}
+#line 1816 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
 #line 92 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: EXP ;", 1, (yyvsp[-1].node)); }
-#line 1713 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STMT", "STMT: EXP ;", 1, (yyvsp[-1].node)); }
+#line 1822 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
 #line 93 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: STMTBLOCK", 1, (yyvsp[0].node)); }
-#line 1719 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STMT", "STMT: STMTBLOCK", 1, (yyvsp[0].node)); }
+#line 1828 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
 #line 94 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: RETURN EXPS ;", 2, getNodeInstance(yylineno, (yyvsp[-2].string), 0),(yyvsp[-1].node)); }
-#line 1725 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STMT" ,"STMT: RETURN EXPS ;", 2, getNodeInstance((yyloc).first_line,"RETURN", (yyvsp[-2].string), 0),(yyvsp[-1].node)); }
+#line 1834 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
 #line 95 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: if ( EXPS ) STMT", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1731 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STMT" ,"STMT: if ( EXPS ) STMT", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1840 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
 #line 96 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: if ( EXPS ) STMT else STMT", 3, (yyvsp[-4].node),(yyvsp[-2].node),(yyvsp[0].node));}
-#line 1737 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STMT", "STMT: if ( EXPS ) STMT else STMT", 3, (yyvsp[-4].node),(yyvsp[-2].node),(yyvsp[0].node));}
+#line 1846 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
 #line 97 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: for ( EXP ; EXP ; EXP ) STMT", 4, (yyvsp[-6].node),(yyvsp[-4].node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1743 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "STMT","STMT: for ( EXP ; EXP ; EXP ) STMT", 4, (yyvsp[-6].node),(yyvsp[-4].node),(yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1852 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
 #line 98 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: CONT ;", 1, getNodeInstance(yylineno, (yyvsp[-1].string), 0)); }
-#line 1749 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"STMT", "STMT: CONT ;", 1, getNodeInstance((yyloc).first_line, "CONT",(yyvsp[-1].string), 0)); }
+#line 1858 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
 #line 99 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "STMT: BREAK ;", 1, getNodeInstance(yylineno, (yyvsp[-1].string), 0)); }
-#line 1755 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "STMT","STMT: BREAK ;", 1, getNodeInstance((yyloc).first_line, "BREAK",(yyvsp[-1].string), 0)); }
+#line 1864 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
 #line 100 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno,"STMT: read ( EXPS )",1, (yyvsp[-2].node));}
-#line 1761 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"STMT", "STMT: read ( EXPS )",1, (yyvsp[-2].node));}
+#line 1870 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
 #line 101 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno,"STMT: write ( EXPS )",1, (yyvsp[-2].node));}
-#line 1767 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"STMT", "STMT: write ( EXPS )",1, (yyvsp[-2].node));}
+#line 1876 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
 #line 104 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "DEFS: TYPE DECS ; DEFS", 3, getNodeInstance(yylineno, (yyvsp[-3].string), 0),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1773 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"DEFS", "DEFS: TYPE DECS ; DEFS", 3, getNodeInstance((yyloc).first_line,"TYPE", (yyvsp[-3].string), 0),(yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1882 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
 #line 105 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "DEFS: STSPEC SDECS ; DEFS", 3, (yyvsp[-3].node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1779 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "DEFS","DEFS: STSPEC SDECS ; DEFS", 3, (yyvsp[-3].node),(yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1888 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
 #line 106 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "DEFS: null", 0);}
-#line 1785 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "DEFS","DEFS: null", 0);}
+#line 1894 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
 #line 109 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "SDEFS: TYPE SDECS ; SDEFS", 3, getNodeInstance(yylineno, (yyvsp[-3].string), 0),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1791 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "SDEFS","SDEFS: TYPE SDECS ; SDEFS", 3, getNodeInstance((yyloc).first_line, "SDEFS",(yyvsp[-3].string), 0),(yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1900 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
 #line 110 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "SDEFS: null", 0);}
-#line 1797 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "SDEFS", "SDEFS: null", 0);}
+#line 1906 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 41:
 #line 113 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "SDECS: ID , SDECS", 2, getNodeInstance(yylineno, (yyvsp[-2].string), 0),(yyvsp[0].node)); }
-#line 1803 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"SDECS", "SDECS: ID , SDECS", 2, getNodeInstance((yyloc).first_line, "ID",(yyvsp[-2].string), 0),(yyvsp[0].node)); }
+#line 1912 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 42:
 #line 114 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "SDECS: ID ", 1,getNodeInstance(yylineno,(yyvsp[0].string),0)); }
-#line 1809 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"SDECS", "SDECS: ID ", 1,getNodeInstance((yyloc).first_line,"ID",(yyvsp[0].string),0)); }
+#line 1918 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
 #line 117 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "DECS: VAR", 1, (yyvsp[0].node)); }
-#line 1815 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "DECS", "DECS: VAR", 1, (yyvsp[0].node)); }
+#line 1924 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
 #line 118 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "DECS: VAR, DECS", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1821 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "DECS", "DECS: VAR, DECS", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1930 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
 #line 119 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "DECS: VAR ASSIGN INIT, DECS", 4, (yyvsp[-4].node),getNodeInstance(yylineno, (yyvsp[-3].string), 0),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1827 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"DECS",  "DECS: VAR ASSIGN INIT, DECS", 4, (yyvsp[-4].node),getNodeInstance((yyloc).first_line,"ASSIGN", (yyvsp[-3].string), 0),(yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1936 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
 #line 120 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "DECS: VAR ASSIGN INIT", 3, (yyvsp[-2].node),getNodeInstance(yylineno, (yyvsp[-1].string), 0),(yyvsp[0].node)); }
-#line 1833 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"DECS",  "DECS: VAR ASSIGN INIT", 3, (yyvsp[-2].node),getNodeInstance((yyloc).first_line,"ASSIGN", (yyvsp[-1].string), 0),(yyvsp[0].node)); }
+#line 1942 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
 #line 123 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "VAR: ID", 1,getNodeInstance(yylineno, (yyvsp[0].string), 0)); }
-#line 1839 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"VAR", "VAR: ID", 1,getNodeInstance((yyloc).first_line,"ID", (yyvsp[0].string), 0)); }
+#line 1948 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
 #line 124 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "VAR: ID [ INT ]", 2, (yyvsp[-3].string),getNodeInstance(yylineno, (yyvsp[-1].string), 0)); }
-#line 1845 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"VAR",  "VAR: ID [ INT ]", 2, (yyvsp[-3].string),getNodeInstance((yyloc).first_line,"INT", (yyvsp[-1].string), 0)); }
+#line 1954 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 49:
 #line 127 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "INIT: EXPS", 1, (yyvsp[0].node)); }
-#line 1851 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"INIT",  "INIT: EXPS", 1, (yyvsp[0].node)); }
+#line 1960 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
 #line 128 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "INIT: { ARGS }", 1, (yyvsp[-1].node)); }
-#line 1857 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"INIT",   "INIT: { ARGS }", 1, (yyvsp[-1].node)); }
+#line 1966 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 51:
 #line 131 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXP: EXPS", 1, (yyvsp[0].node)); }
-#line 1863 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXP",   "EXP: EXPS", 1, (yyvsp[0].node)); }
+#line 1972 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 52:
 #line 132 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "EXP: null", 0);}
-#line 1869 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "EXP", "EXP: null", 0);}
+#line 1978 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 53:
 #line 135 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1875 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1984 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 54:
 #line 136 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1881 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1990 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 55:
 #line 137 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1887 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 1996 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 56:
 #line 138 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1893 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2002 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
 #line 139 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1899 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2008 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 58:
 #line 140 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1905 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2014 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
 #line 141 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1911 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2020 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
 #line 142 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1917 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2026 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
 #line 143 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1923 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2032 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
 #line 144 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1929 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2038 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 63:
 #line 145 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1935 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2044 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 64:
 #line 146 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1941 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2050 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 65:
 #line 147 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1947 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2056 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 66:
 #line 148 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1953 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2062 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 67:
 #line 149 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1959 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2068 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 68:
 #line 150 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1965 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2074 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 69:
 #line 151 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1971 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2080 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 70:
 #line 152 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1977 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2086 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 71:
 #line 153 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1983 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2092 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 72:
 #line 154 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1989 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2098 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 73:
 #line 155 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1995 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2104 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 74:
 #line 156 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2001 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2110 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 75:
 #line 157 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2007 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2116 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 76:
 #line 158 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2013 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2122 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 77:
 #line 159 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2019 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2128 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 78:
 #line 160 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2025 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2134 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 79:
 #line 161 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2031 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2140 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 80:
 #line 162 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2037 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2146 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 81:
 #line 163 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2043 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[-1].string), 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2152 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 82:
 #line 164 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXPS: UNARYOP EXPS", 2, (yyvsp[-1].node),(yyvsp[0].node)); }
-#line 2049 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  "EXPS: UNARYOP EXPS", 2, (yyvsp[-1].node),(yyvsp[0].node)); }
+#line 2158 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 83:
 #line 165 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXPS: ( EXPS )", 1, (yyvsp[-1].node)); }
-#line 2055 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", "EXPS: ( EXPS )", 1, (yyvsp[-1].node)); }
+#line 2164 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 84:
 #line 166 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXPS: ID ( ARGS )", 2, getNodeInstance(yylineno, (yyvsp[-3].string), 0),(yyvsp[-1].node)); }
-#line 2061 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  "EXPS: ID ( ARGS )", 2, getNodeInstance((yyloc).first_line,"ID", (yyvsp[-3].string), 0),(yyvsp[-1].node)); }
+#line 2170 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 85:
 #line 167 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXPS: ID ARRS", 2, getNodeInstance(yylineno, (yyvsp[-1].string), 0),(yyvsp[0].node)); }
-#line 2067 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  "EXPS: ID ARRS", 2, getNodeInstance((yyloc).first_line,"ID", (yyvsp[-1].string), 0),(yyvsp[0].node)); }
+#line 2176 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 86:
 #line 168 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "EXPS: ID DOT ID", 3, getNodeInstance(yylineno, (yyvsp[-2].string), 0),getNodeInstance(yylineno, (yyvsp[-1].string), 0),getNodeInstance(yylineno, (yyvsp[0].string), 0)); }
-#line 2073 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "EXPS", "EXPS: ID DOT ID", 3, getNodeInstance((yyloc).first_line,"ID", (yyvsp[-2].string), 0),getNodeInstance((yyloc).first_line,"DOT", (yyvsp[-1].string), 0),getNodeInstance((yyloc).first_line, "ID",(yyvsp[0].string), 0)); }
+#line 2182 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 87:
 #line 169 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, (yyvsp[0].string), 0); }
-#line 2079 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"EXPS",  (yyvsp[0].string), 0); }
+#line 2188 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 88:
 #line 172 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "ARRS: [ EXPS ]", 1, (yyvsp[-1].node)); }
-#line 2085 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line, "ARRS", "ARRS: [ EXPS ]", 1, (yyvsp[-1].node)); }
+#line 2194 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 89:
 #line 173 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, "ARRS: null", 0);}
-#line 2091 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "ARRS", "ARRS: null", 0);}
+#line 2200 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 90:
 #line 176 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "ARGS: EXPS, ARGS", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 2097 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"ARGS",  "ARGS: EXPS, ARGS", 2, (yyvsp[-2].node),(yyvsp[0].node)); }
+#line 2206 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 91:
 #line 177 "smallc.y" /* yacc.c:1646  */
-    { (yyval.node) = getNodeInstance(yylineno, "args", 1, (yyvsp[0].node)); }
-#line 2103 "y.tab.c" /* yacc.c:1646  */
+    { (yyval.node) = getNodeInstance((yyloc).first_line,"ARGS", "args", 1, (yyvsp[0].node)); }
+#line 2212 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 92:
 #line 181 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, (yyvsp[0].string), 0);}
-#line 2109 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "UNARYOP",(yyvsp[0].string), 0);}
+#line 2218 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 93:
 #line 182 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, (yyvsp[0].string), 0);}
-#line 2115 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line,"UNARYOP", (yyvsp[0].string), 0);}
+#line 2224 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 94:
 #line 183 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, (yyvsp[0].string), 0);}
-#line 2121 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "UNARYOP",(yyvsp[0].string), 0);}
+#line 2230 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 95:
 #line 184 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, (yyvsp[0].string), 0);}
-#line 2127 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "UNARYOP",(yyvsp[0].string), 0);}
+#line 2236 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 96:
 #line 185 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, (yyvsp[0].string), 0);}
-#line 2133 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "UNARYOP",(yyvsp[0].string), 0);}
+#line 2242 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 97:
 #line 186 "smallc.y" /* yacc.c:1646  */
-    {(yyval.node) = getNodeInstance(yylineno, (yyvsp[0].string), 0);}
-#line 2139 "y.tab.c" /* yacc.c:1646  */
+    {(yyval.node) = getNodeInstance((yyloc).first_line, "UNARYOP",(yyvsp[0].string), 0);}
+#line 2248 "y.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 2143 "y.tab.c" /* yacc.c:1646  */
+#line 2252 "y.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2160,6 +2269,7 @@ yyreduce:
   YY_STACK_PRINT (yyss, yyssp);
 
   *++yyvsp = yyval;
+  *++yylsp = yyloc;
 
   /* Now 'shift' the result of the reduction.  Determine what state
      that goes to, based on the state we popped back to and the rule
@@ -2224,7 +2334,7 @@ yyerrlab:
 #endif
     }
 
-
+  yyerror_range[1] = yylloc;
 
   if (yyerrstatus == 3)
     {
@@ -2240,7 +2350,7 @@ yyerrlab:
       else
         {
           yydestruct ("Error: discarding",
-                      yytoken, &yylval);
+                      yytoken, &yylval, &yylloc);
           yychar = YYEMPTY;
         }
     }
@@ -2261,6 +2371,7 @@ yyerrorlab:
   if (/*CONSTCOND*/ 0)
      goto yyerrorlab;
 
+  yyerror_range[1] = yylsp[1-yylen];
   /* Do not reclaim the symbols of the rule whose action triggered
      this YYERROR.  */
   YYPOPSTACK (yylen);
@@ -2294,9 +2405,9 @@ yyerrlab1:
       if (yyssp == yyss)
         YYABORT;
 
-
+      yyerror_range[1] = *yylsp;
       yydestruct ("Error: popping",
-                  yystos[yystate], yyvsp);
+                  yystos[yystate], yyvsp, yylsp);
       YYPOPSTACK (1);
       yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
@@ -2306,6 +2417,11 @@ yyerrlab1:
   *++yyvsp = yylval;
   YY_IGNORE_MAYBE_UNINITIALIZED_END
 
+  yyerror_range[2] = yylloc;
+  /* Using YYLLOC is tempting, but would change the location of
+     the lookahead.  YYLOC is available though.  */
+  YYLLOC_DEFAULT (yyloc, yyerror_range, 2);
+  *++yylsp = yyloc;
 
   /* Shift the error token.  */
   YY_SYMBOL_PRINT ("Shifting", yystos[yyn], yyvsp, yylsp);
@@ -2345,7 +2461,7 @@ yyreturn:
          user semantic actions for why this is necessary.  */
       yytoken = YYTRANSLATE (yychar);
       yydestruct ("Cleanup: discarding lookahead",
-                  yytoken, &yylval);
+                  yytoken, &yylval, &yylloc);
     }
   /* Do not reclaim the symbols of the rule whose action triggered
      this YYABORT or YYACCEPT.  */
@@ -2354,7 +2470,7 @@ yyreturn:
   while (yyssp != yyss)
     {
       yydestruct ("Cleanup: popping",
-                  yystos[*yyssp], yyvsp);
+                  yystos[*yyssp], yyvsp, yylsp);
       YYPOPSTACK (1);
     }
 #ifndef yyoverflow
@@ -2386,10 +2502,11 @@ int main(int argc, char *argv[])
     	freopen(argv[2], "w", stdout);
 	if(!yyparse()){
 		fprintf(stderr,"Parsing complete.\n");
-		printTree(root,0);
+		//printTree(root,0);
+        root->CodePrint();
+        fprintf(stderr,"Translation success\n\n\n");
 	}
 	else{
-		
 		printf("ERROR! parse failed.\n");
 	}
 

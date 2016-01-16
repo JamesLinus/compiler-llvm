@@ -7,7 +7,8 @@
 #include "header.h"
 
 #define addCode(x) \
-TreeNode::Codes.push_back(code(x));
+TreeNode::Codes.push_back(code(x)); \
+Codes.back().comment=getToRoot();
 
 
 
@@ -22,6 +23,8 @@ public:
     string comment;
     vector<string> regs;
     void print(){
+        if(tpl.size()>0 &&tpl.back()=='\n') tpl=tpl.substr(0,(int)tpl.size()-1);
+
         if(regs.size()==0)
             printf(tpl.c_str());
         if(regs.size()==1)
@@ -38,6 +41,10 @@ public:
             printf(tpl.c_str(),regs[0].c_str(),regs[1].c_str(),regs[2].c_str(),regs[3].c_str(), regs[4].c_str(), regs[5].c_str(), regs[6].c_str());
         if(regs.size()==7)
             printf(tpl.c_str(),regs[0].c_str(),regs[1].c_str(),regs[2].c_str(),regs[3].c_str(), regs[4].c_str(), regs[5].c_str(), regs[6].c_str(),regs[7].c_str());
+    }
+
+    void printComment(){
+        printf("\n;%s\n\n",comment.c_str());
     }
     code(const string l):tpl(l){};
     code(const string l,const vector<string> re):tpl(l),regs(re){};

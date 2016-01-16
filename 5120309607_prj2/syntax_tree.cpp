@@ -17,6 +17,17 @@ int TreeNode::arrsize;
 string TreeNode::arrid;
 int TreeNode::registerNum;
 
+
+void TreeNode::init() {
+    insideStmtBlocks = 0;
+    insideFor = 0;
+    EnableCodeGen = true;
+    getPointer = false;
+    insideFunction = false;
+    arrsize = 0;
+    registerNum = 0;
+}
+
 string TreeNode::allocateRegister(const string prefix) {
     string tmp = "%" + prefix + to_string(registerNum++);
     return tmp;
@@ -131,5 +142,15 @@ void printTree(TreeNode *t, int level) {
     i = 0;
     for (; i < t->childrenSize; i++) {
         printTree(t->children[i], level + 1);
+    }
+}
+
+void TreeNode::CodePrint() {
+    init();
+    this->Codegen();
+    for (int i = 0; i < Codes.size(); i++) {
+        Codes[i].print();
+        Codes[i].printComment();
+
     }
 }

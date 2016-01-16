@@ -3,7 +3,7 @@
 #include "syntax_tree.h"
 #include "y.tab.h"
 
-#define printReturn(x) printf(#x"\n"); return x;
+#define printReturn(x)  return x;
 #define load yylval.string = strdup(yytext);
 
 extern char *yytext;
