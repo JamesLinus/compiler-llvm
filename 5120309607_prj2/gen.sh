@@ -8,11 +8,14 @@ fi
 
 scc="$1"
 
-testcase=`find ./testcase -name *.sc`
+testcase=`find ./testcase -name *.sc | grep queen`
+echo $testcase
 for test in ${testcase}
 do
     # echo $test
-    echo "\n\n\n***************************************"
+    echo ""
+    echo ""
+    echo "***************************************"
     echo $test 
     target=$(echo "${test}" | sed "s@.sc@_test.ll@" )
     $scc "${test}"  "${target}"

@@ -393,9 +393,9 @@ string STMTTreeNode::Codegen() {
         getPointer = false;
         string tmp = children.at(1)->Codegen();
         string j;
-        if(children.at(1)->retType!="i1"){//i32
+        if(children.at(1)->retType=="i32"){//i32
             j=allocateRegister("tmp_");
-            addCode(" %s = icmp ne i32 %s, 0")
+            addCode(" %s = icmp ne i32 %s, 0 \n; for conversion")
             addReg(j)
             addReg(tmp)
         }else{
@@ -447,6 +447,7 @@ string EXPTreeNode::Codegen() {
     if(children.size()==0){
         return "NULL";
     }else{
+        retType=children.at(0)->retType;
         return children.at(0)->Codegen();
     }
 }
@@ -656,7 +657,7 @@ string EXPSTreeNode::Codegen() {
                 addCode("%s= icmp sgt i32 %s, %s\n")
             } else if (content == "<") {
                 retType="i1";
-                addCode("%s= icmp slt i32 %s, %s\n")
+                addCode("%s= icmp slt i32 %s, %s\n ; set retType to i1")
             } else if (content == "^") {
                 addCode("%s= xor i32 %s, %s\n")
             } else if (content == "|") {
