@@ -554,7 +554,29 @@ string EXPSTreeNode::Codegen() {
         addReg(children.at(0)->content);
         return ret;
     } else if (content == "EXPS: ID DOT ID") {
-        err("not implemented");
+
+        string st= children.at(0)->content;
+        string type;
+        rtn=SearchIdType(st,type);
+        CHECK_RTN("not found symbol:"+st);
+        if(type=="i32" || type=="i1" || type=="i32*" || type[0] =='[') {
+            err("only struct can  be used as first parameter of Dot ,get type:" + type)
+            exit(-1);
+        }
+        string at=children.at(1)->content;
+        string ix= structTable[type][at];
+        addCode("%s = getelementptr inbounds ( "+st+"*, i32 0, i32,"+to_string(ix)+" ), align 4 ")
+        string reg=allocateRegister("ptr_");
+        addReg(reg);
+        if(thisNodeGetPointer){
+            return reg;
+        }else{
+            string de = allocateRegister();
+            addCode("  %s = load i32* %s, align 4\n");
+            addReg(de);
+            addReg(reg);
+            return de;
+        }
     } else if (children.size() == 2) { //binary case
         cerr << "binary case:" << content << endl;
         string op1, op2, res;
@@ -723,21 +745,71 @@ void ARGSTreeNode::CodeHelperGen() {
 }
 
 string SDECSTreeNode::Codegen() {
-    err("not implemented")
-    return TreeNode::Codegen();
+    string ret;
+    if(structType.empty()){
+        err(" not inside a struct");
+        exit(-1);
+    }
+    ret = "i32 ";
+    string id = children.at(0)->Codegen();
+    int ix= structTable[structType].size();
+    structTable[structType][id]=ix;
+    for(int i=1;i<children.size();i++){
+        ret= ret+","+children.at(1)->Codegen();
+    }
+    return ret;
 }
 
 string SDEFSTreeNode::Codegen() {
-    err("not implemented")
-    return TreeNode::Codegen();
-}
+    string ret;
+    if(children.size()>0){
+        ret=children.at(1)->Codegen();
+        string y=children.at(3)->Codegen();
+        if(y!="NULL"){
+            ret=ret+"," +y;
+        }
+    }
+    return ret;
+};
 
 string STSPECTreeNode::Codegen() {
-    err("not implemented")
-    return TreeNode::Codegen();
+    if(content=="STSPEC: STRUCT ID"){
+        string id=children.at(1)->content;
+        if(structTypes.count(id)==0){
+            err("no such symbol:"+id)
+            exit(-1);
+        }else{
+            structType=id;
+        }
+    }else if(content=="STSPEC: STRUCT ID { SDEFS }"){
+        string id = children.at(1)->content;
+        structType=id;
+        structTypes.insert(id);
+        string list = children.at(2)->Codegen();
+        addCode(" %%%s = type {"+list+"}");
+        addReg(id);
+    }else if(content=="STRUCT LC SDEFS RC"){
+        string id=to_string(genName)+".gen";genName++;
+        structType=id;
+        structTypes.insert(id);
+        string list= children.at(1)->Codegen();
+        addCode(" %%%s = type {"+list+"}");
+        addReg(id);
+    }
+    return "NULL";
 }
 
 string SEXTVARSTreeNode::Codegen() {
-    err("not implemented")
-    return TreeNode::Codegen();
+    if(children.size()>0){
+        string id =children.at(0)->content;
+        string MemPtr;
+        rtn = saveIdtoTable(id,structType,"struct",MemPtr);
+        CHECK_RTN("error saving to symbol table, may be duplicate: "+ id);
+        addCode("%s = common global "+structType+" zeroinitializer, align 4\n")
+        addReg(MemPtr)
+        for (uint i=1;i<children.size();i++){
+            children.at(i)->Codegen();
+        }
+    }
+    return "NULL";
 }

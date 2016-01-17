@@ -3,7 +3,7 @@
 //
 #include "syntax_tree.h"
 
-
+int TreeNode::genName;
 vector<code> TreeNode::Codes;
 bool TreeNode::EnableCodeGen;
 vector<string> TreeNode::paras;
@@ -17,9 +17,13 @@ int TreeNode::arrsize;
 string TreeNode::arrid;
 int TreeNode::registerNum;
 int TreeNode::arrindex;
+string TreeNode::structType;
+unordered_set<string> TreeNode::structTypes;
+unordered_map<string,unordered_map<string,int>> TreeNode::structTable;
 
 
 void TreeNode::init() {
+    genName=0;
     insideStmtBlocks = 0;
     insideFor = 0;
     EnableCodeGen = true;
