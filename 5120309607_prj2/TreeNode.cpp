@@ -447,8 +447,9 @@ string EXPTreeNode::Codegen() {
     if(children.size()==0){
         return "NULL";
     }else{
+        string tmp= children.at(0)->Codegen();
         retType=children.at(0)->retType;
-        return children.at(0)->Codegen();
+        return tmp;
     }
 }
 
