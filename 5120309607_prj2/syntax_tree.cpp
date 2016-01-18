@@ -3,6 +3,9 @@
 //
 #include "syntax_tree.h"
 
+
+int TreeNode::fornum;
+int TreeNode::ifnum;
 int TreeNode::genName;
 vector<code> TreeNode::Codes;
 vector<code> TreeNode::Defs;
@@ -24,6 +27,8 @@ unordered_map<string,unordered_map<string,int>> TreeNode::structTable;
 
 
 void TreeNode::init() {
+    fornum=0;
+    ifnum=0;
     genName=0;
     insideStmtBlocks = 0;
     insideFor = 0;
@@ -163,10 +168,9 @@ void TreeNode::CodePrint() {
         Defs[i].print();
         Defs[i].printComment();
     }
-    
+
     for (int i = 0; i < Codes.size(); i++) {
         Codes[i].print();
         Codes[i].printComment();
-
     }
 }

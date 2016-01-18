@@ -357,6 +357,7 @@ string STMTTreeNode::Codegen() {
         addReg(reg);
     } else if (content == "STMT: if ( EXPS ) STMT" || content == "STMT: if ( EXPS ) STMT else STMT") {
         //unimplemented
+        ifnum++;
         getPointer = false;
         string reg = children.at(0)->Codegen();
         string tmp = allocateRegister();
@@ -367,9 +368,9 @@ string STMTTreeNode::Codegen() {
         }
         addReg(tmp)
         addReg(reg)
-        string labelstart = "label.if.line" + to_string(lineCount) + ".then";
-        string labelelse= "label.if.line"+to_string(lineCount)+".else";
-        string labelend = "label.if.line" + to_string(lineCount) + ".end";
+        string labelstart = "label.if.ix" + to_string(ifnum) + ".then";
+        string labelelse= "label.if.ix"+to_string(ifnum)+".else";
+        string labelend = "label.if.ix" + to_string(ifnum) + ".end";
 
         addCode("  br i1 %s, label %%%s, label %%%s\n ")
         addReg(tmp);
@@ -398,12 +399,13 @@ string STMTTreeNode::Codegen() {
         }
     } else if (content == "STMT: for ( EXP ; EXP ; EXP ) STMT") {
         insideFor++;
+        fornum++;
         //getPointer=false;
         children.at(0)->Codegen();
 
-        string forcond = "label.for.line" + to_string(lineCount) + ".cond";
-        string forbody = "label.for.line" + to_string(lineCount) + ".body";
-        string forend = "label.for.line" + to_string(lineCount) + ".end";
+        string forcond = "label.for.ix" + to_string(fornum) + ".cond";
+        string forbody = "label.for.ix" + to_string(fornum) + ".body";
+        string forend = "label.for.ix" + to_string(fornum) + ".end";
         labelForBreak.push(forend);
         labelForContinue.push(forcond);
         addLabel(forcond)

@@ -12,6 +12,14 @@ Codes.back().comment=getToRoot(); \
 cerr<<Codes.back().tpl<<endl; \
 cerr<<Codes.back().comment<<endl;
 
+#define addDefs(x) \
+TreeNode::Defs.push_back(code(x)); \
+Defs.back().comment=getToRoot(); \
+
+#define addDefReg(y) \
+Defs.back().regs.push_back(y);
+
+
 #define addReg(y) \
 Codes.back().regs.push_back(y);
 

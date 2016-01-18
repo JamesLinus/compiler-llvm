@@ -25,6 +25,7 @@ class TreeNode {
 public:
     int rtn;
     static int genName;
+    static int fornum,ifnum;
     static unordered_set<string> structTypes;
     static unordered_map<string,unordered_map<string,int>> structTable;
     static string structType;
