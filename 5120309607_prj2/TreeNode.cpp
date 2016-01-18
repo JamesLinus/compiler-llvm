@@ -180,17 +180,17 @@ string DECSTreeNode::Codegen() {
         TreeNode *r = children.at(2);
         if (t->content == "VAR: ID" && r->content == "INIT: EXPS") {//a=1
             //EXPS must be INT
-            if (!isdigit(r->children.at(0)->content.back())) {
-                err("not digit in initialize");
-                exit(-1);
-            }
+
             string memPtr;
             rtn = saveIdtoTable(t->children.at(0)->content, "i32", memPtr);
             CHECK_RTN("error in saving to table");
             addCode("%s  = alloca i32 , align 4\n");
             addReg(memPtr);
 
-            addCode(" store i32 " + r->children.at(0)->content + " , i32* %s, align 4")
+            getPointer=false;
+            string tmp=r->children.at(0)->Codegen();
+
+            addCode(" store i32 " + tmp + " , i32* %s, align 4")
             addReg(memPtr)
 
 

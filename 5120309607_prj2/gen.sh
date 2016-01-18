@@ -8,7 +8,7 @@ fi
 
 scc="$1"
 
-testcase=`find ./testcase -name *.sc | grep struct`
+testcase=`find ./testcase -name *.sc | grep quick`
 echo $testcase
 for test in ${testcase}
 do
