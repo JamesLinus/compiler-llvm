@@ -37,6 +37,7 @@ GenNode(INIT);
 GenNode(EXP);
 GenNode(EXPS);
 GenNode(ARRS);
+GenNode(INT);
 class ARGSTreeNode: public TreeNode{
 public:
     virtual void CodeHelperGen() override;
@@ -70,6 +71,7 @@ public:
         SwitchClass(ARRS);
         SwitchClass(ARGS);
         SwitchClass(UNARYOP);
+        SwitchClass(INT);
         return new TreeNode();
     };
 };
