@@ -403,13 +403,14 @@ string STMTTreeNode::Codegen() {
         //getPointer=false;
         children.at(0)->Codegen();
 
+        string forcheck ="label.for.ix"+to_string(fornum)+".check";
         string forcond = "label.for.ix" + to_string(fornum) + ".cond";
         string forbody = "label.for.ix" + to_string(fornum) + ".body";
         string forend = "label.for.ix" + to_string(fornum) + ".end";
         labelForBreak.push(forend);
         labelForContinue.push(forcond);
-        addLabel(forcond)
-
+        //addLabel(forcond)
+        addLabel(forcheck)
         getPointer = false;
         string tmp = children.at(1)->Codegen();
         string j;
@@ -430,11 +431,12 @@ string STMTTreeNode::Codegen() {
         addCode("%s:")
         addReg(forbody)
 
-        children.at(3)->Codegen();
-        children.at(2)->Codegen();
+        children.at(3)->Codegen(); //stmt
+        addLabel(forcond)
+        children.at(2)->Codegen(); // inc
 
         addCode("  br label %%%s\n")
-        addReg(forcond);
+        addReg(forcheck);
 
         addCode("%s:")
         addReg(forend)
