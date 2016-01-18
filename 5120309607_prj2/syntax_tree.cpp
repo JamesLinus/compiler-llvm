@@ -20,7 +20,9 @@ bool TreeNode::getPointer;
 int TreeNode::arrsize;
 string TreeNode::arrid;
 int TreeNode::registerNum;
+set<string> TreeNode::freeRegister;
 int TreeNode::arrindex;
+int TreeNode::registerFingerPrint;
 string TreeNode::structType;
 unordered_set<string> TreeNode::structTypes;
 unordered_map<string,unordered_map<string,int>> TreeNode::structTable;
@@ -38,11 +40,31 @@ void TreeNode::init() {
     arrsize = 0;
     arrindex = 0;
     registerNum = 0;
+    registerFingerPrint=0;
 }
 
 string TreeNode::allocateRegister(const string prefix) {
-    string tmp = "%" + prefix + to_string(registerNum++);
-    return tmp;
+    string ret;
+    if(prefix=="r_"){ //default
+        if(freeRegister.size()>0){
+            ret=*freeRegister.begin();
+            freeRegister.erase(freeRegister.begin());
+        }else{
+            ret = "%" + prefix + to_string(registerNum++);
+        }
+    }else{
+        ret = "%" + prefix +"oneshot";
+    }
+    ret=ret+".fp"+to_string(registerFingerPrint);
+    registerFingerPrint++;
+    return ret;
+}
+
+void TreeNode::freReg(string id) {
+    if(id.size()>3 && id.substr(0,3)=="%r_") {
+        size_t ed= id.find_last_of(".");
+        freeRegister.insert(id.substr(0,ed));
+    }
 }
 
 int TreeNode::SearchIdType(const string &id, string &type) const {

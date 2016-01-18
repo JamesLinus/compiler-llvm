@@ -48,10 +48,13 @@ public:
     static void init();
 private:
     static int registerNum;
+    static int registerFingerPrint;
+    static set<string> freeRegister;
 public:
 
     string retType;
     static  string allocateRegister(const string prefix="r_");
+    static void freReg(string id);
 
     string getToRoot(){
         if(parent==NULL){

@@ -190,8 +190,11 @@ string DECSTreeNode::Codegen() {
             getPointer=false;
             string tmp=r->children.at(0)->Codegen();
 
-            addCode(" store i32 " + tmp + " , i32* %s, align 4")
+            addCode(" store i32 %s , i32* %s, align 4")
+            addReg(tmp)
             addReg(memPtr)
+
+            freReg(tmp);
 
 
         } else if (t->content == "VAR: ID [ INT ]" && r->content == "INIT: { ARGS }") {//a={0,1}
@@ -330,6 +333,7 @@ string STMTTreeNode::Codegen() {
         addCode(" %s = call i32 (i8*, ...)* @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %s)")
         addReg(allocateRegister("tmp_"))
         addReg(tmp);
+        freReg(tmp);
 
     } else if (content == "STMT: write ( EXPS )") {
         getPointer = false;
@@ -337,13 +341,16 @@ string STMTTreeNode::Codegen() {
         addCode("%s = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i32 0, i32 0), i32 %s)")
         addReg(allocateRegister("tmp_"))
         addReg(tmp);
+
+        freReg(tmp);
     } else if (content == "STMT: STMTBLOCK") {
         insideStmtBlocks++;
         string ret = TreeNode::Codegen();
         insideStmtBlocks--;
         return ret;
     } else if (content == "STMT: EXP ;") {
-        return TreeNode::Codegen();
+        string ret= TreeNode::Codegen();
+        freReg(ret);
     } else if (content == "STMT: RETURN EXPS ;") {
         //0: return
         //1: exps
@@ -355,12 +362,13 @@ string STMTTreeNode::Codegen() {
         string reg = children[1]->Codegen();
         addCode("ret i32 %s");
         addReg(reg);
+        freReg(reg);
     } else if (content == "STMT: if ( EXPS ) STMT" || content == "STMT: if ( EXPS ) STMT else STMT") {
         //unimplemented
         ifnum++;
         getPointer = false;
         string reg = children.at(0)->Codegen();
-        string tmp = allocateRegister();
+        string tmp = allocateRegister("tmp_");
         if(children.at(0)->retType=="i1") {
             addCode(" %s = icmp ne i1 %s, 0\n")
         }else{
@@ -368,6 +376,7 @@ string STMTTreeNode::Codegen() {
         }
         addReg(tmp)
         addReg(reg)
+        freReg(reg);
         string labelstart = "label.if.ix" + to_string(ifnum) + ".then";
         string labelelse= "label.if.ix"+to_string(ifnum)+".else";
         string labelend = "label.if.ix" + to_string(ifnum) + ".end";
@@ -375,6 +384,7 @@ string STMTTreeNode::Codegen() {
         addCode("  br i1 %s, label %%%s, label %%%s\n ")
         addReg(tmp);
         addReg(labelstart)
+        freReg(tmp);
         if(children.size()>2) {
             addReg(labelelse)
         }else{
@@ -419,12 +429,14 @@ string STMTTreeNode::Codegen() {
             addCode(" %s = icmp ne i32 %s, 0 \n; for conversion")
             addReg(j)
             addReg(tmp)
+            freReg(tmp);
         }else{
             j=tmp;
         }
 
         addCode("  br i1 %s, label %%%s, label %%%s\n")
         addReg(j);
+        freReg(j);
         addReg(forbody)
         addReg(forend)
 
@@ -510,6 +522,7 @@ string EXPSTreeNode::Codegen() {
             addReg(ret);
             addReg(memPtr);
             addReg(reg);
+            freReg(reg);
 
             if (thisNodeGetPointer) {
                 return ret;
@@ -518,6 +531,7 @@ string EXPSTreeNode::Codegen() {
                 addCode("  %s = load i32* %s, align 4\n");
                 addReg(de);
                 addReg(ret);
+                freReg(ret);
                 return de;
             }
         }
@@ -528,12 +542,12 @@ string EXPSTreeNode::Codegen() {
         if (c == "++" || c == "--") {
             getPointer = true;
             string tmp = children.at(1)->Codegen();
-
-            addCode(" %s = load i32* %s, align 4\n")
             string op = allocateRegister();
             string res = allocateRegister();
+            addCode(" %s = load i32* %s, align 4\n")
             addReg(op);
             addReg(tmp);
+
             if (children.at(0)->content == "++") {
                 addCode("   %s = add nsw i32 %s, 1\n")
             } else if (children.at(0)->content == "--") {
@@ -541,13 +555,16 @@ string EXPSTreeNode::Codegen() {
             }
             addReg(res)
             addReg(op)
+            freReg(op);
 
             addCode("   store i32 %s, i32* %s, align 4\n")
             addReg(res);
             addReg(tmp);
             if (thisNodeGetPointer) {
+                freReg(res);
                 return tmp;
             } else {
+                freReg(tmp);
                 return res;
             }
         } else {
@@ -565,6 +582,7 @@ string EXPSTreeNode::Codegen() {
             }
             addReg(res)
             addReg(tmp)
+            freReg(tmp);
             return res;
         }
 
@@ -607,8 +625,8 @@ string EXPSTreeNode::Codegen() {
             exit(-1);
         }
         int ix= structTable[type][at];
+        string reg=allocateRegister();
         addCode("%s = getelementptr inbounds %s* %s, i32 0, i32 "+to_string(ix))
-        string reg=allocateRegister("ptr_");
         addReg(reg);
         addReg(type);
         addReg(ptr);
@@ -619,6 +637,7 @@ string EXPSTreeNode::Codegen() {
             addCode("  %s = load i32* %s, align 4\n");
             addReg(de);
             addReg(reg);
+            freReg(reg);
             return de;
         }
     } else if (children.size() == 2) { //binary case
@@ -626,7 +645,7 @@ string EXPSTreeNode::Codegen() {
         string op1, op2, res;
         if (content == "=" || content == "+=" || content == "-=" || content == "/=" || content == "*=" ||
             content == "|=" || content == "&=" || content==">>=" || content =="<<=" || content== "^=") {
-            res=allocateRegister("tmp_");
+            res=allocateRegister();
             getPointer = true;
             string ptr1;
             ptr1 = children[0]->Codegen();
@@ -654,16 +673,20 @@ string EXPSTreeNode::Codegen() {
                 addCode("%s= xor i32 %s, %s\n")
             }
             if (content[0] == '=') {
+                freReg(res);
                 res = op2;
             } else {
                 addReg(res)
+                freReg(op1);
                 addReg(op1)
+                freReg(op2);
                 addReg(op2)
             }
             addCode("    store i32 %s, i32* %s, align 4\n");
             addReg(res)
             addReg(ptr1)
             if (thisNodeGetPointer) {
+                freReg(res);
                 return ptr1;
             } else {
                 return res;
@@ -684,13 +707,19 @@ string EXPSTreeNode::Codegen() {
                 addCode("  %s = icmp ne "+op1Type+" %s, 0\n")
                 addReg(tmp1)
                 addReg(op1)
+                freReg(op1);
+
                 addCode("  %s = icmp ne " +op2Type+" %s, 0\n")
                 addReg(tmp2)
                 addReg(op2)
+                freReg(op2);
+
                 addCode(" %s = and i1 %s, %s\n")
                 addReg(res)
                 addReg(tmp1)
                 addReg(tmp2)
+                freReg(tmp1);
+                freReg(tmp2);
                 return res;
             } else if (content == "||") {
                 retType="i1";
@@ -699,13 +728,17 @@ string EXPSTreeNode::Codegen() {
                 addCode("  %s = icmp ne "+op1Type+" %s, 0\n")
                 addReg(tmp1)
                 addReg(op1)
+                freReg(op1);
                 addCode("  %s = icmp ne " +op2Type+" %s, 0\n")
                 addReg(tmp2)
                 addReg(op2)
+                freReg(op2);
                 addCode(" %s = or i1 %s, %s\n")
                 addReg(res)
                 addReg(tmp1)
                 addReg(tmp2)
+                freReg(tmp1);
+                freReg(tmp2);
                 return res;
             }
 
@@ -752,6 +785,8 @@ string EXPSTreeNode::Codegen() {
                 exit(-1);
             }
             addReg(res)
+            freReg(op1);
+            freReg(op2);
             addReg(op1)
             addReg(op2)
             return res;
@@ -768,7 +803,7 @@ void ARGSTreeNode::CodeHelperGen() {
     getPointer = false;
     string val = children.at(0)->Codegen();
     if (isdigit(val.at(0)) || val.at(0) == '-') { // const
-        string ptr = allocateRegister("ptr_");
+        string ptr = allocateRegister("tmp_");
         addCode("%s =  getelementptr inbounds [" + to_string(arrsize) + " x i32]* %s, i32 0, i32 " + to_string(arrindex) +
                 "\n")
         addReg(ptr)
