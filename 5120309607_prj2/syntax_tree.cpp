@@ -5,6 +5,7 @@
 
 int TreeNode::genName;
 vector<code> TreeNode::Codes;
+vector<code> TreeNode::Defs;
 bool TreeNode::EnableCodeGen;
 vector<string> TreeNode::paras;
 int TreeNode::insideStmtBlocks;
@@ -158,6 +159,11 @@ void printTree(TreeNode *t, int level) {
 void TreeNode::CodePrint() {
     init();
     this->Codegen();
+    for(int i=0; i<Defs.size();i++){
+        Defs[i].print();
+        Defs[i].printComment();
+    }
+    
     for (int i = 0; i < Codes.size(); i++) {
         Codes[i].print();
         Codes[i].printComment();

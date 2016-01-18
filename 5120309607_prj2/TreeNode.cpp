@@ -826,15 +826,15 @@ string STSPECTreeNode::Codegen() {
         structType="%"+id;
         structTypes.insert(structType);
         string list = children.at(2)->Codegen();
-        addCode(" %s = type {"+list+"}");
-        addReg(structType);
+        addDefs(" %s = type {"+list+"}");
+        addDefReg(structType);
     }else if(content=="STSPEC: STRUCT { SDEFS }"){
         string id=to_string(genName)+".gen";genName++;
         structType="%"+id;
         structTypes.insert(structType);
         string list= children.at(1)->Codegen();
-        addCode(" %s = type {"+list+"}");
-        addReg(structType);
+        addDefs(" %s = type {"+list+"}");
+        addDefReg(structType);
     }
     return "NULL";
 }
@@ -845,9 +845,15 @@ string SEXTVARSTreeNode::Codegen() {
         string MemPtr;
         rtn = saveIdtoTable(id,structType,".struct",MemPtr);
         CHECK_RTN("error saving to symbol table, may be duplicate: "+ id);
-        addCode("%s = common global %s zeroinitializer, align 4\n")
-        addReg(MemPtr)
-        addReg(structType)
+        if(!insideFunction) {
+            addCode("%s = common global %s zeroinitializer, align 4\n")
+            addReg(MemPtr)
+            addReg(structType)
+        }else{
+            addCode("%s = alloca %s, align 4\n")
+            addReg(MemPtr)
+            addReg(structType)
+        }
         for (uint i=1;i<children.size();i++){
             children.at(i)->Codegen();
         }

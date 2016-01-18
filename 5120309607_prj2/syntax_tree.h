@@ -29,6 +29,7 @@ public:
     static unordered_map<string,unordered_map<string,int>> structTable;
     static string structType;
     static vector<code> Codes;
+    static vector<code> Defs;
 	static bool EnableCodeGen;
     static vector<string> paras;
     static int insideStmtBlocks;
