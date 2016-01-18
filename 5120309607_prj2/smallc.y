@@ -102,11 +102,11 @@ STMT: EXP SEMI { $$ = getNodeInstance(yylineno,"STMT", "STMT: EXP ;", 1, $1); }
 ;
 
 DEFS: TYPE DECS SEMI DEFS { $$ = getNodeInstance(yylineno,"DEFS", "DEFS: TYPE DECS ; DEFS", 3, getNodeInstance(yylineno,"TYPE", $1, 0),$2,$4); }
-| STSPEC SDECS SEMI DEFS { $$ = getNodeInstance(yylineno, "DEFS","DEFS: STSPEC SDECS ; DEFS", 3, $1,$2,$4); }
+| STSPEC SEXTVARS SEMI DEFS { $$ = getNodeInstance(yylineno, "DEFS","DEFS: STSPEC SEXTVARS ; DEFS", 3, $1,$2,$4); }
 | {$$ = getNodeInstance(yylineno, "DEFS","DEFS: null", 0);}
 ;
 
-SDEFS: TYPE SDECS SEMI SDEFS { $$ = getNodeInstance(yylineno, "SDEFS","SDEFS: TYPE SDECS ; SDEFS", 3, getNodeInstance(yylineno, "SDEFS",$1, 0),$2,$4); }
+SDEFS: TYPE SDECS SEMI SDEFS { $$ = getNodeInstance(yylineno, "SDEFS","SDEFS: TYPE SDECS ; SDEFS", 3, getNodeInstance(yylineno, "TYPE",$1, 0),$2,$4); }
 | {$$ = getNodeInstance(yylineno, "SDEFS", "SDEFS: null", 0);}
 ;
 
@@ -166,7 +166,7 @@ EXPS: EXPS AND_OP EXPS { $$ = getNodeInstance(yylineno,"EXPS",  $2, 2, $1,$3); }
 | ID LP ARGS RP { $$ = getNodeInstance(yylineno,"EXPS",  "EXPS: ID ( ARGS )", 2, getNodeInstance(yylineno,"ID", $1, 0),$3); }
 | ID ARRS { $$ = getNodeInstance(yylineno,"EXPS",  "EXPS: ID ARRS", 2, getNodeInstance(yylineno,"ID", $1, 0),$2); }
 | ID DOT ID { $$ = getNodeInstance(yylineno, "EXPS", "EXPS: ID DOT ID", 3, getNodeInstance(yylineno,"ID", $1, 0),getNodeInstance(yylineno,"DOT", $2, 0),getNodeInstance(yylineno, "ID",$3, 0)); }
-| INT { $$ = getNodeInstance(yylineno,"EXPS",  $1, 0); }
+| INT { $$ = getNodeInstance(yylineno,"INT",  $1, 0); }
 ;
 
 ARRS: LB EXPS RB  { $$ = getNodeInstance(yylineno, "ARRS", "ARRS: [ EXPS ]", 1, $2); }
