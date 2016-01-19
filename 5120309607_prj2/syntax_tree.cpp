@@ -3,7 +3,8 @@
 //
 #include "syntax_tree.h"
 
-
+unordered_set<string> TreeNode::usedFunctionName;
+unordered_set<string> TreeNode::usedStructType;
 int TreeNode::fornum;
 int TreeNode::ifnum;
 int TreeNode::genName;
@@ -23,6 +24,7 @@ int TreeNode::registerNum;
 set<string> TreeNode::freeRegister;
 int TreeNode::arrindex;
 int TreeNode::registerFingerPrint;
+bool TreeNode::optimize;
 string TreeNode::structType;
 unordered_set<string> TreeNode::structTypes;
 unordered_map<string,unordered_map<string,int>> TreeNode::structTable;
@@ -185,7 +187,14 @@ void printTree(TreeNode *t, int level) {
 
 void TreeNode::CodePrint() {
     init();
+    optimize=false;
     this->Codegen();
+    clearWrapper();
+
+    cerr<<"***************************************optimize...."<<endl;
+    optimize=true;
+    this->Codegen();
+
     for(int i=0; i<Defs.size();i++){
         Defs[i].print();
         Defs[i].printComment();

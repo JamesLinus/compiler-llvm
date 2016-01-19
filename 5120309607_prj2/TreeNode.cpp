@@ -52,6 +52,7 @@ string EXTDEFSTreeNode::Codegen() {//simply recursive
 
 //done
 string EXTDEFTreeNode::Codegen() {
+    smartEmit
     // simply recursive
     cerr<<"entering EXTDEF"<<endl;
     if (content == "EXTDEF: TYPE FUNC STMTBLOCK") {
@@ -588,10 +589,12 @@ string EXPSTreeNode::Codegen() {
 
     } else if (content == "EXPS: ID ( ARGS )") {
         string list = children.at(1)->Codegen();
-        addCode("%s = call i32 @%s(" + list + ")")
+        string funcitonName=children.at(0)->content;
+        usedFunctionName.insert(funcitonName);
         string ret = allocateRegister();
+        addCode("%s = call i32 @%s(" + list + ")")
         addReg(ret);
-        addReg(children.at(0)->content);
+        addReg(funcitonName);
         return ret;
     } else if (content == "EXPS: ID DOT ID") {
 
@@ -884,6 +887,7 @@ string SEXTVARSTreeNode::Codegen() {
         string MemPtr;
         rtn = saveIdtoTable(id,structType,".struct",MemPtr);
         CHECK_RTN("error saving to symbol table, may be duplicate: "+ id);
+        usedStructType.insert(structType);
         if(!insideFunction) {
             addCode("%s = common global %s zeroinitializer, align 4\n")
             addReg(MemPtr)
@@ -943,4 +947,27 @@ string INTTreeNode::Codegen() {
         ret=content;
     }
     return ret;
+}
+
+bool EXTDEFTreeNode::isEmit() {
+    cerr<<"############################"<<content<<endl;
+    if(content=="EXTDEF: TYPE FUNC STMTBLOCK"){
+        string functionName=children.at(1)->children.at(0)->content;
+        cerr<<"#################"<<functionName<<endl;
+        if(usedFunctionName.count(functionName)==0 && functionName!="main"){
+            return false;
+        }
+    }else if(content=="EXTDEF: STSPEC SEXTVARS ;"){
+        if(children.at(0)->content=="STSPEC: STRUCT { SDEFS }"){
+            if(children.at(1)->children.size()==0){
+                return false;
+            }
+        }else{
+            string typeName=children.at(0)->children.at(1)->content;
+            if(usedStructType.count(typeName)==0){
+                return false;
+            }
+        }
+    }
+    return true;
 }

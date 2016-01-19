@@ -9,3 +9,14 @@ compiler
 *.a
 *Store
 *.err
+
+#test
+*.ll
+
+#make
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+
+#ide
+.idea/

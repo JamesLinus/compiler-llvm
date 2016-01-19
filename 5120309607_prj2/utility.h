@@ -9,8 +9,8 @@
 #define addCode(x) \
 TreeNode::Codes.push_back(code(x)); \
 Codes.back().comment=getToRoot(); \
-cerr<<Codes.back().tpl<<endl; \
-cerr<<Codes.back().comment<<endl;
+//cerr<<Codes.back().tpl<<endl; \
+//cerr<<Codes.back().comment<<endl;
 
 #define addDefs(x) \
 TreeNode::Defs.push_back(code(x)); \

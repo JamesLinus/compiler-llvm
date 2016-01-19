@@ -24,6 +24,8 @@ struct IdInfo{
 class TreeNode {
 public:
     int rtn;
+    static unordered_set<string> usedFunctionName;
+    static unordered_set<string> usedStructType;
     static int genName;
     static int fornum,ifnum;
     static unordered_set<string> structTypes;
@@ -44,6 +46,8 @@ public:
     static int arrsize;
     static int arrindex;
     static string arrid;
+
+    static bool optimize;
 
     static void init();
 private:
@@ -77,6 +81,22 @@ public:
     }
     TreeNode * parent;
     TreeNode():parent(NULL),rtn(0),retType("i32"){};
+    void clearWrapper(){
+        structTable.clear();
+        structTypes.clear();
+        paras.clear();
+        Codes.clear();
+        Defs.clear();
+        init();
+        clear();
+    }
+
+    void clear(){
+        symbolTable.clear();
+        for(auto a:children){
+            a->clear();
+        }
+    }
 
     virtual string Codegen(){
         for(auto a:children){
@@ -84,6 +104,11 @@ public:
         }
         return "NULL";
     }
+
+    virtual bool isEmit(){
+       return true;
+    }
+
 
     virtual void CodeHelperGen(){
         return;

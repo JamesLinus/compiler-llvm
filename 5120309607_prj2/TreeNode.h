@@ -14,12 +14,19 @@ virtual string Codegen() override; \
 #define SwitchClass(x) \
 if(#x == classname) return new x##TreeNode();
 
+#define smartEmit \
+if(optimize && !isEmit()){ return "NULL";} \
+
 
 
 
 GenNode(PROGRAM);
 GenNode(EXTDEFS);
-GenNode(EXTDEF);
+class EXTDEFTreeNode: public TreeNode{
+public:
+virtual string Codegen() override;
+virtual bool isEmit() override ;
+};
 GenNode(SEXTVARS);
 GenNode(EXTVARS);
 GenNode(STSPEC);
@@ -38,6 +45,9 @@ GenNode(EXP);
 GenNode(EXPS);
 GenNode(ARRS);
 GenNode(INT);
+
+
+
 class ARGSTreeNode: public TreeNode{
 public:
     virtual void CodeHelperGen() override;
