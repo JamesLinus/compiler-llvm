@@ -238,6 +238,7 @@ string ARGSTreeNode::Codegen() {
     if(val=="NULL"){
         return "";
     }
+    args.push_back(val);
     //cerr<<"getting "<<val<<children.at(0)->content<<endl;
     if (isdigit(val.at(0)) || val.at(0) == '-') { // const
         ret = " i32 " + val + " ";
@@ -482,6 +483,7 @@ string EXPTreeNode::Codegen() {
     if(children.size()==0){
         return "NULL";
     }else{
+        cover=children.at(0)->cover;
         string tmp= children.at(0)->Codegen();
         retType=children.at(0)->retType;
         return tmp;
@@ -508,6 +510,7 @@ string EXPSTreeNode::Codegen() {
                 addCode("  %s = load i32* %s, align 4\n")
                 addReg(reg);
                 addReg(memPtr);
+                addDep(reg,memPtr);
                 return reg;
             }
         } else if (children.at(1)->content == "ARRS: [ EXPS ]") {
@@ -523,6 +526,8 @@ string EXPSTreeNode::Codegen() {
             addReg(ret);
             addReg(memPtr);
             addReg(reg);
+            addDep(ret,memPtr)
+            addDep(ret,reg)
             freReg(reg);
 
             if (thisNodeGetPointer) {
@@ -532,11 +537,14 @@ string EXPSTreeNode::Codegen() {
                 addCode("  %s = load i32* %s, align 4\n");
                 addReg(de);
                 addReg(ret);
+                addDep(de,ret);
                 freReg(ret);
                 return de;
             }
         }
     } else if (content == "EXPS: ( EXPS )") {
+        cover=children.at(0)->cover;
+        retType=children.at(0)->retType;
         return children.at(0)->Codegen();
     } else if (content == "EXPS: UNARYOP EXPS") {
         string &c = children.at(0)->content;
@@ -548,6 +556,7 @@ string EXPSTreeNode::Codegen() {
             addCode(" %s = load i32* %s, align 4\n")
             addReg(op);
             addReg(tmp);
+            addDep(op,tmp);
 
             if (children.at(0)->content == "++") {
                 addCode("   %s = add nsw i32 %s, 1\n")
@@ -556,11 +565,14 @@ string EXPSTreeNode::Codegen() {
             }
             addReg(res)
             addReg(op)
+            addDep(res,op)
             freReg(op);
 
             addCode("   store i32 %s, i32* %s, align 4\n")
             addReg(res);
             addReg(tmp);
+            addDep(tmp,res)
+
             if (thisNodeGetPointer) {
                 freReg(res);
                 return tmp;
@@ -583,11 +595,13 @@ string EXPSTreeNode::Codegen() {
             }
             addReg(res)
             addReg(tmp)
+            addDep(res,tmp)
             freReg(tmp);
             return res;
         }
 
     } else if (content == "EXPS: ID ( ARGS )") {
+        args.clear();
         string list = children.at(1)->Codegen();
         string funcitonName=children.at(0)->content;
         usedFunctionName.insert(funcitonName);
@@ -595,6 +609,12 @@ string EXPSTreeNode::Codegen() {
         addCode("%s = call i32 @%s(" + list + ")")
         addReg(ret);
         addReg(funcitonName);
+
+        for(int i=0;i<args.size();i++){
+            addDep(ret,args[i]);
+        }
+        args.clear();
+
         return ret;
     } else if (content == "EXPS: ID DOT ID") {
 
@@ -633,6 +653,7 @@ string EXPSTreeNode::Codegen() {
         addReg(reg);
         addReg(type);
         addReg(ptr);
+        addDep(reg,ptr);
         if(thisNodeGetPointer){
             return reg;
         }else{
@@ -640,6 +661,7 @@ string EXPSTreeNode::Codegen() {
             addCode("  %s = load i32* %s, align 4\n");
             addReg(de);
             addReg(reg);
+            addDep(de,reg);
             freReg(reg);
             return de;
         }
@@ -684,10 +706,13 @@ string EXPSTreeNode::Codegen() {
                 addReg(op1)
                 freReg(op2);
                 addReg(op2)
+                addDep(res,op1);
+                addDep(res,op2);
             }
             addCode("    store i32 %s, i32* %s, align 4\n");
             addReg(res)
             addReg(ptr1)
+            addDep(ptr1,res)
             if (thisNodeGetPointer) {
                 freReg(res);
                 return ptr1;
@@ -710,17 +735,21 @@ string EXPSTreeNode::Codegen() {
                 addCode("  %s = icmp ne "+op1Type+" %s, 0\n")
                 addReg(tmp1)
                 addReg(op1)
+                addDep(tmp1,op1)
                 freReg(op1);
 
                 addCode("  %s = icmp ne " +op2Type+" %s, 0\n")
                 addReg(tmp2)
                 addReg(op2)
+                addDep(tmp2,op2)
                 freReg(op2);
 
                 addCode(" %s = and i1 %s, %s\n")
                 addReg(res)
                 addReg(tmp1)
                 addReg(tmp2)
+                addDep(res,tmp1)
+                addDep(res,tmp2)
                 freReg(tmp1);
                 freReg(tmp2);
                 return res;
@@ -731,15 +760,19 @@ string EXPSTreeNode::Codegen() {
                 addCode("  %s = icmp ne "+op1Type+" %s, 0\n")
                 addReg(tmp1)
                 addReg(op1)
+                addDep(tmp1,op1)
                 freReg(op1);
                 addCode("  %s = icmp ne " +op2Type+" %s, 0\n")
                 addReg(tmp2)
                 addReg(op2)
+                addDep(tmp2,op2)
                 freReg(op2);
                 addCode(" %s = or i1 %s, %s\n")
                 addReg(res)
                 addReg(tmp1)
                 addReg(tmp2)
+                addDep(res,tmp1)
+                addDep(res,tmp2)
                 freReg(tmp1);
                 freReg(tmp2);
                 return res;
@@ -792,6 +825,8 @@ string EXPSTreeNode::Codegen() {
             freReg(op2);
             addReg(op1)
             addReg(op2)
+            addDep(res,op1)
+            addDep(res,op2)
             return res;
         }
 
@@ -860,7 +895,10 @@ string STSPECTreeNode::Codegen() {
         string id=children.at(1)->content;
         structType ="%"+id;
         if(structTypes.count(structType)==0){
-            err("no such symbol:"+id)
+            err("no such symbol struct :"+id)
+            for(auto a:structTypes){
+                    cerr<<a<<endl;
+            }
             exit(-1);
         }
     }else if(content=="STSPEC: STRUCT ID { SDEFS }"){
@@ -955,19 +993,23 @@ bool EXTDEFTreeNode::isEmit() {
         string functionName=children.at(1)->children.at(0)->content;
         cerr<<"#################"<<functionName<<endl;
         if(usedFunctionName.count(functionName)==0 && functionName!="main"){
+            err("not emiting funciton")
             return false;
         }
     }else if(content=="EXTDEF: STSPEC SEXTVARS ;"){
         if(children.at(0)->content=="STSPEC: STRUCT { SDEFS }"){
+            err("not emiting")
             if(children.at(1)->children.size()==0){
                 return false;
             }
         }else{
-            string typeName=children.at(0)->children.at(1)->content;
+            string typeName="%"+children.at(0)->children.at(1)->content;
             if(usedStructType.count(typeName)==0){
+                err("not emiting: "+typeName )
                 return false;
             }
         }
     }
+    cerr<<"emit this node:"+content<<endl;
     return true;
 }

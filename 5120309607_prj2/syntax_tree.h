@@ -21,9 +21,15 @@ struct IdInfo{
     IdInfo():lineno(0),type(""),suffix(""){}
 };
 
+struct Cover{
+    unordered_map<string,unordered_set<string>> dependency;
+    unordered_set<string> affectedVar;
+};
+
 class TreeNode {
 public:
     int rtn;
+    static vector<string> args;
     static unordered_set<string> usedFunctionName;
     static unordered_set<string> usedStructType;
     static int genName;
@@ -91,6 +97,12 @@ public:
         clear();
     }
 
+    void getChildrenCover(){
+        for(auto c:children){
+            cover.affectedVar.insert(c->cover.affectedVar.begin(),c->cover.affectedVar.end());
+        }
+    }
+
     void clear(){
         symbolTable.clear();
         for(auto a:children){
@@ -132,6 +144,9 @@ public:// symbolTable
     int saveIdtoTable( const string & id,  const string & type) ;
     int saveIdtoTable(const string  & id, const string & type ,string &MemPtr) ;
     int saveIdtoTable(const string  & id, const  string  & type, const string & suffix, string &MemPtr) ;
+
+public:
+    Cover cover;
 
 };
 

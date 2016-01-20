@@ -18,6 +18,13 @@ if(#x == classname) return new x##TreeNode();
 if(optimize && !isEmit()){ return "NULL";} \
 
 
+#define addDep(x,y) \
+if(y.size()>0 && y.at(0)!='-' && isdigit(y.at(0)) ){\
+cover.dependency[x].insert(y); \
+cover.affectedVar.insert(x); \
+}
+
+
 
 
 GenNode(PROGRAM);

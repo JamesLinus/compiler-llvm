@@ -5,6 +5,7 @@
 
 unordered_set<string> TreeNode::usedFunctionName;
 unordered_set<string> TreeNode::usedStructType;
+vector<string> TreeNode::args;
 int TreeNode::fornum;
 int TreeNode::ifnum;
 int TreeNode::genName;

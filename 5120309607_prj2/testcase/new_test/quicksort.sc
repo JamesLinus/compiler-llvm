@@ -1,6 +1,13 @@
 int a[1000];
 int num;
 
+struct we{int b;} ee,ddd;
+
+
+int dfjaskljflk(){
+	return 0;
+}
+
 int divide(int low, int high)
 {
 	int temp=a[low];
