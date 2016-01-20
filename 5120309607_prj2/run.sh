@@ -1,13 +1,8 @@
 # !bin/bash
 #set -evx
 
-if [[ $# = 0 ]];then
-     echo "usage ./run.sh path/to/scc"
-     exit 1
-fi
+make 
 
-scc="$1"
-cp "${scc}" ./scc
 scc="./scc"
 
 testcase=`find ./testcase -name *.sc`
